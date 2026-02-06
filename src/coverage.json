@@ -1,0 +1,67 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-06T09:20:39.751Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 0,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Update the app loading flow so the UI cannot remain indefinitely on the global \"Loading...\" screen; after a reasonable timeout, show a diagnostic state with clear messaging and recovery actions (e.g., retry fetching the user profile, re-create actor by invalidating React Query cache, and a hard reload option).",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/components/AppInitGate.tsx",
+          "frontend/src/utils/reactQueryRecovery.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Surface actionable error details (in English) when actor creation or profile queries fail, including a user-friendly message and an expandable technical detail section (e.g., the React Query error message) to help debug cases where deployment is successful but the browser remains stuck.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/components/QueryErrorPanel.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/Header.tsx"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Improve geolocation failure handling in Ambulance and Police interfaces to detect and clearly explain permission/policy-related failures (including cases like \"Geolocation has been disabled in this document by permissions policy\"), and provide clear next steps to the user.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/utils/geolocationErrors.ts",
+          "frontend/src/hooks/useGeolocationWatch.ts",
+          "frontend/src/pages/AmbulanceInterface.tsx",
+          "frontend/src/pages/PoliceInterface.tsx"
+        ],
+        "matchedFiles": []
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "build-template/Dockerfile",
+    "build-template/LICENSE",
+    "build-template/README.md",
+    "build-template/deploy.sh",
+    "build-template/icp.yaml",
+    "build-template/src/backend/canister.yaml",
+    "build-template/src/frontend/canister.yaml",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-implementation-plan.json",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

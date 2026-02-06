@@ -1,0 +1,22 @@
+{
+  "backend/main.mo": "Motoko canister managing user profiles, ambulance locations, SOS alerts, and access control with role-based authorization.",
+  "feature_evidence.json": "Empty feature evidence report JSON structure.",
+  "frontend-file-summaries.txt": "Prewritten summaries of all frontend files and components.",
+  "frontend/index.css": "Tailwind-based global styles defining OKLCH color variables and light/dark theme tokens.",
+  "frontend/index.html": "Basic HTML entry point mounting the React app and loading main.tsx.",
+  "frontend/src/App.tsx": "Root React component handling authentication, profile setup, and routing between ambulance and police interfaces.",
+  "frontend/src/components/Footer.tsx": "Footer component showing attribution and styling.",
+  "frontend/src/components/Header.tsx": "Header displaying branding, user identity, role badge, and logout controls.",
+  "frontend/src/components/LoginPrompt.tsx": "Login screen prompting users to authenticate via Internet Identity.",
+  "frontend/src/components/ProfileSetup.tsx": "Form for entering name and selecting ambulance or police role, saving the profile to backend.",
+  "frontend/src/hooks/useActor.ts": "Hook that initializes and manages the authenticated backend actor, refetching queries when identity changes.",
+  "frontend/src/hooks/useInternetIdentity.ts": "Provides React context and hooks for managing Internet Identity authentication using AuthClient, including login, logout, and identity loading states.",
+  "frontend/src/hooks/useQueries.ts": "Defines React Query hooks for user profiles, ambulance locations, and SOS alert operations by interacting with backend actor methods.",
+  "frontend/src/index.css": "Sets up Tailwind CSS base styles and defines light/dark theme variables, including emergency color schemes and gradient backgrounds.",
+  "frontend/src/main.tsx": "Initializes the React app, wrapping it with QueryClientProvider and InternetIdentityProvider.",
+  "frontend/src/pages/AmbulanceInterface.tsx": "Provides an ambulance UI that tracks geolocation, sends periodic updates, and manages SOS activation with auto‑deactivation.",
+  "frontend/src/pages/PoliceInterface.tsx": "Displays nearby ambulances and active SOS alerts, playing sounds for new alerts and tracking officer location.",
+  "frontend/src/utils/urlParams.ts": "Utility functions for reading, persisting, and clearing URL parameters and session storage values.",
+  "frontend/tailwind.config.js": "Configures Tailwind with dark mode, custom colors, animations, container settings, and includes typography, container-query, and animation plugins.",
+  "project_state.json": "Defines the project state, known issues, and three pending feature requests focused on fixing loading hangs, improving error reporting, and handling geolocation permission failures."
+}

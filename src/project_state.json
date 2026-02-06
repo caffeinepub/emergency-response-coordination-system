@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Draft app sometimes stuck on loading screen even after successful deploy; user requests redeploy",
+    "Browser shows 'Geolocation has been disabled in this document by permissions policy' error when trying to use GPS"
+  ],
+  "isFixRequest": true,
+  "existing_features": [],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Update the app loading flow so the UI cannot remain indefinitely on the global \"Loading...\" screen; after a reasonable timeout, show a diagnostic state with clear messaging and recovery actions (e.g., retry fetching the user profile, re-create actor by invalidating React Query cache, and a hard reload option).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Surface actionable error details (in English) when actor creation or profile queries fail, including a user-friendly message and an expandable technical detail section (e.g., the React Query error message) to help debug cases where deployment is successful but the browser remains stuck.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Improve geolocation failure handling in Ambulance and Police interfaces to detect and clearly explain permission/policy-related failures (including cases like \"Geolocation has been disabled in this document by permissions policy\"), and provide clear next steps to the user.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Redeploy and fix stuck loading screen with better error handling",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

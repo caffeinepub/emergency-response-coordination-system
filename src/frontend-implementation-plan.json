@@ -1,0 +1,90 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Fix infinite global loading with timeouts, diagnostic recovery, and improved geolocation errors",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Add a timeout-based global loading fallback that exits the spinner-only screen and offers recovery actions (retry, cache reset, hard reload).",
+      "acceptanceCriteria": [
+        "When authentication initialization or profile fetch takes longer than the timeout, the app exits the spinner-only screen and shows a visible \"Still loading\" state with next-step actions.",
+        "The recovery actions allow the user to retry without needing to redeploy (e.g., refetch profile query and clear/invalidate relevant React Query caches).",
+        "If retries continue to fail, the diagnostic state remains usable and does not revert to an infinite spinner."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/AppInitGate.tsx",
+          "operation": "create",
+          "description": "Create an app-initialization gate component that: (1) shows the existing spinner initially, (2) flips to a \"Still loading\" diagnostic UI after a reasonable timeout, and (3) provides recovery actions: retry profile refetch, reset relevant React Query caches, and hard reload. Use existing shadcn-ui primitives (e.g., Card/Button/Alert) for consistent UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/reactQueryRecovery.ts",
+          "operation": "create",
+          "description": "Add centralized React Query recovery helpers used by the init gate (e.g., invalidate/remove/reset known query keys like current profile and actor-dependent data) so retries are deterministic and do not bounce back to an infinite spinner."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wrap the existing initialization/profile-loading conditional rendering with the new AppInitGate so the app cannot remain indefinitely on the global \"Loading...\" screen; wire the gate's actions to profile refetch and React Query cache reset (via QueryClient), plus a hard reload option."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Render actionable error states for actor/profile failures with a user-friendly explanation and expandable technical details plus retry.",
+      "acceptanceCriteria": [
+        "If the user profile query errors, the app renders an error state instead of appearing stuck loading.",
+        "The error state includes a brief user-friendly explanation and a way to view the underlying error text for debugging.",
+        "A retry control is present and triggers a refetch of the failed query."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/QueryErrorPanel.tsx",
+          "operation": "create",
+          "description": "Create a reusable error panel component that shows (a) a clear English explanation, (b) a retry button, and (c) an expandable technical details section (e.g., using a native <details> element) that displays the underlying error text from React Query. Use existing shadcn-ui primitives (e.g., Alert/Button) where appropriate. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update the authenticated/profile-fetch flow so that profile query failures render QueryErrorPanel (with retry calling the query's refetch and optional cache reset action) instead of leaving the user on a spinner-like experience."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Harden header rendering for cases where profile query fails or is unavailable (e.g., avoid assuming profile exists) and ensure logout still clears cached data; keep UI stable when App shows diagnostic/error states."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Improve geolocation permission/policy failure handling in Ambulance and Police interfaces with clear English guidance and non-blocking UI behavior.",
+      "acceptanceCriteria": [
+        "If geolocation fails with a permission/policy-related error, the UI shows a specific guidance message (not just the raw browser error).",
+        "The rest of the page remains functional and does not get stuck in a perpetual \"Acquiring GPS location...\" state.",
+        "The guidance text is in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/geolocationErrors.ts",
+          "operation": "create",
+          "description": "Add a utility that classifies geolocation errors into user-facing guidance (e.g., permission denied, permissions-policy blocked like \"Geolocation has been disabled in this document by permissions policy\", insecure context/blocked, timeout/unavailable) and provides recommended next steps in English."
+        },
+        {
+          "path": "frontend/src/hooks/useGeolocationWatch.ts",
+          "operation": "create",
+          "description": "Create a small hook to manage watchPosition lifecycle and state (location, status, classified guidance, raw error text) plus a user-invoked retry/reset action; ensure failures transition to an error/guidance state rather than remaining in \"Acquiring\" forever."
+        },
+        {
+          "path": "frontend/src/pages/AmbulanceInterface.tsx",
+          "operation": "modify",
+          "description": "Replace the ad-hoc geolocation logic with useGeolocationWatch and geolocationErrors guidance; render a clear, specific English message for permission/policy failures and provide a retry action, while keeping the rest of the page usable (no perpetual \"Acquiring GPS location...\" when errors occur)."
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Replace the ad-hoc geolocation logic with useGeolocationWatch and geolocationErrors guidance; show specific English next steps for permission/policy failures and ensure the UI does not remain stuck in an acquiring state."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-06T09:20:39.749Z",
+  "summary": "The diff does not implement the requested UI/loading/error/geolocation improvements (REQ-1/2/3). It mainly adds a project_state.json tracker and modifies a constrained hook file (frontend/src/hooks/useInternetIdentity.ts), which the BuildRequest explicitly forbids modifying.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Update the app loading flow so the UI cannot remain indefinitely on the global \"Loading...\" screen; after a reasonable timeout, show a diagnostic state with clear messaging and recovery actions (retry profile fetch, invalidate relevant React Query caches to recreate actor, hard reload).",
+      "reason": "No diff evidence of any new/modified UI components or loading flow changes; only a metadata JSON file was added and a forbidden hook file was modified (truncated), with no indication of timeout-based diagnostic UI or recovery actions.",
+      "evidence": [
+        "project_state.json",
+        "frontend/src/hooks/useInternetIdentity.ts"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Surface actionable error details (in English) when actor creation or profile queries fail, including a user-friendly message and an expandable technical detail section, plus a retry control.",
+      "reason": "No evidence of implementing an error UI state, expandable technical details, or retry/refetch controls for profile/actor failures in the provided diff summary.",
+      "evidence": [
+        "project_state.json",
+        "frontend/src/hooks/useInternetIdentity.ts"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Improve geolocation failure handling in Ambulance and Police interfaces to detect and clearly explain permission/policy-related failures and provide next steps, without getting stuck acquiring GPS.",
+      "reason": "No files related to Ambulance/Police interfaces or geolocation handling were modified/added in the diff summary, and no geolocation-specific logic/messages are shown.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Modification of frontend/src/hooks/useInternetIdentity.ts despite the BuildRequest constraint to not modify this file (must compose instead).",
+      "reason": "The BuildRequest explicitly forbids modifications under frontend/src/hooks/useInternetIdentity.ts, but the diff shows it was modified.",
+      "evidence": [
+        "frontend/src/hooks/useInternetIdentity.ts"
+      ]
+    },
+    {
+      "description": "Addition of project_state.json containing internal tracking items (AR-1/AR-2/AR-3) not requested as part of the app behavior changes.",
+      "reason": "The BuildRequest requirements focus on UI loading/error handling and geolocation guidance; it does not request adding a project tracking/state JSON file.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "confidence": 0.86,
+  "changed_files": [
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "project_state.json"
+  ]
+}
