@@ -1,0 +1,99 @@
+import { useState } from 'react';
+import { useSaveCallerUserProfile } from '../hooks/useQueries';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Ambulance, Shield, Loader2 } from 'lucide-react';
+import { AppRole } from '../backend';
+
+export default function ProfileSetup() {
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<'ambulance' | 'police'>('ambulance');
+  const saveProfile = useSaveCallerUserProfile();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    try {
+      await saveProfile.mutateAsync({
+        name: name.trim(),
+        role: role as AppRole,
+      });
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
+  };
+
+  return (
+    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md border-2 shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
+          <CardDescription>Choose your role and enter your name</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Your Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={saveProfile.isPending}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Select Your Role</Label>
+              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'ambulance' | 'police')}>
+                <div className="flex items-center space-x-3 rounded-lg border-2 border-border p-4 transition-colors hover:bg-muted/50 has-[:checked]:border-emergency-red has-[:checked]:bg-emergency-red/5">
+                  <RadioGroupItem value="ambulance" id="ambulance" />
+                  <Label htmlFor="ambulance" className="flex flex-1 cursor-pointer items-center gap-3">
+                    <Ambulance className="h-6 w-6 text-emergency-red" />
+                    <div>
+                      <div className="font-semibold">Ambulance Crew</div>
+                      <div className="text-xs text-muted-foreground">Send SOS alerts and share location</div>
+                    </div>
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-3 rounded-lg border-2 border-border p-4 transition-colors hover:bg-muted/50 has-[:checked]:border-emergency-blue has-[:checked]:bg-emergency-blue/5">
+                  <RadioGroupItem value="police" id="police" />
+                  <Label htmlFor="police" className="flex flex-1 cursor-pointer items-center gap-3">
+                    <Shield className="h-6 w-6 text-emergency-blue" />
+                    <div>
+                      <div className="font-semibold">Police Unit</div>
+                      <div className="text-xs text-muted-foreground">Monitor ambulances and respond to alerts</div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full bg-gradient-to-r from-emergency-blue to-emergency-red hover:opacity-90"
+              disabled={!name.trim() || saveProfile.isPending}
+            >
+              {saveProfile.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Continue'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

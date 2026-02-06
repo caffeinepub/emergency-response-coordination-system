@@ -1,0 +1,12 @@
+{
+  "frontend/src/App.tsx": "Main application component that handles authentication flow, profile setup, and renders the appropriate interface (Ambulance or Police) based on user role.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations with optimized polling intervals (2-3 seconds) for real-time location and SOS alert synchronization.",
+  "frontend/src/components/Header.tsx": "Application header displaying branding, user info with role badge, and logout functionality.",
+  "frontend/src/components/Footer.tsx": "Simple footer with copyright and caffeine.ai attribution.",
+  "frontend/src/components/LoginPrompt.tsx": "Landing page prompting users to authenticate via Internet Identity with emergency services branding.",
+  "frontend/src/components/ProfileSetup.tsx": "Profile creation form where users select their role (Ambulance or Police) and enter their name.",
+  "frontend/src/pages/AmbulanceInterface.tsx": "Ambulance crew interface with continuous GPS location sharing every 3 seconds, large SOS button with visual confirmation, and live tracking status indicators.",
+  "frontend/src/pages/PoliceInterface.tsx": "Police command center with real-time map displaying ambulances within 1km radius, red highlighted SOS markers using ambulance-marker.dim_32x32.png, audio alerts for new SOS signals, and live location updates every 2-3 seconds.",
+  "frontend/src/index.css": "Global styles with OKLCH color system including custom emergency-red and emergency-blue theme colors and gradient background.",
+  "frontend/tailwind.config.js": "Tailwind configuration extended with emergency theme colors (emergency-red and emergency-blue) for the emergency services aesthetic."
+}
