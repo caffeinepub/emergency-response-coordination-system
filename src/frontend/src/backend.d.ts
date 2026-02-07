@@ -40,6 +40,7 @@ export enum UserRole {
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deactivateSOS(): Promise<void>;
+    deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
@@ -55,6 +56,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setUserProfile(user: Principal, profile: UserProfile): Promise<void>;
     triggerSOS(coordinates: Coordinates): Promise<void>;
     updateAmbulanceLocation(coordinates: Coordinates): Promise<void>;
 }

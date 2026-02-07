@@ -5,25 +5,33 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Ambulance, Shield, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
+import { Ambulance, Shield, Loader2, AlertCircle } from 'lucide-react';
 import { AppRole } from '../backend';
 
 export default function ProfileSetup() {
   const [name, setName] = useState('');
   const [role, setRole] = useState<'ambulance' | 'police'>('ambulance');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const saveProfile = useSaveCallerUserProfile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
+    // Clear any previous error
+    setErrorMessage(null);
+
     try {
       await saveProfile.mutateAsync({
         name: name.trim(),
         role: role as AppRole,
       });
-    } catch (error) {
-      console.error('Failed to save profile:', error);
+      // Success - the query refetch will trigger App.tsx to transition
+    } catch (error: any) {
+      // Display error to user
+      const message = error?.message || 'Failed to save profile. Please try again.';
+      setErrorMessage(message);
     }
   };
 
@@ -36,6 +44,13 @@ export default function ProfileSetup() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="name">Your Name</Label>
               <Input

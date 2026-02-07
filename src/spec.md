@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Prevent the app from getting stuck on the global loading screen by adding timeouts, diagnostics, and clear recovery actions, and improve error/geolocation failure messaging.
+**Goal:** Unblock new user onboarding so newly authenticated users can create their initial profile and proceed past role selection (police/ambulance) without any admin setup, while preserving admin-only protections.
 
 **Planned changes:**
-- Add a loading timeout so the UI transitions from spinner-only to a “Still loading” diagnostic state with recovery actions (retry profile fetch, invalidate/clear relevant React Query cache to re-create actor, and a hard reload option).
-- Render explicit error states (instead of appearing stuck) when actor creation or profile queries fail, including a user-friendly message plus an expandable technical details section (e.g., underlying error text) and a retry control.
-- Improve Ambulance and Police geolocation failure handling to detect permission/policy-related errors and show clear English guidance and next steps without blocking the rest of the page or looping on “Acquiring GPS location...”.
+- Adjust backend authorization to allow authenticated callers to create their own initial profile and read their own profile, while keeping admin-only methods restricted and blocking anonymous access.
+- Fix profile creation flow so a brand-new user can submit ProfileSetup successfully and the app routes to the correct interface based on selected role (AmbulanceInterface or PoliceInterface).
+- Improve ProfileSetup error handling to show clear English error messages on save failure and ensure the Continue button/loading state recovers so users can retry without refreshing.
 
-**User-visible outcome:** If authentication/profile loading or actor creation takes too long or fails, users see a helpful diagnostic/error screen with retry and recovery options; geolocation failures in Ambulance/Police show clear guidance while the page remains usable.
+**User-visible outcome:** A new user can sign in, choose police or ambulance, save their profile, and be taken into the correct interface; if saving fails, they see an error message and can retry immediately.

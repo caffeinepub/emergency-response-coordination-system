@@ -1,64 +1,57 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-06T09:20:39.751Z",
+  "generatedAt": "2026-02-07T10:11:14.758Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 0,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the app loading flow so the UI cannot remain indefinitely on the global \"Loading...\" screen; after a reasonable timeout, show a diagnostic state with clear messaging and recovery actions (e.g., retry fetching the user profile, re-create actor by invalidating React Query cache, and a hard reload option).",
-        "status": "missing",
+        "summary": "Fix profile creation so that a newly authenticated user (signing in with their own Internet Identity / Google-backed II) can successfully create an initial profile and proceed past the role selection step (police/ambulance) without requiring admin setup.",
+        "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/AppInitGate.tsx",
-          "frontend/src/utils/reactQueryRecovery.ts",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/App.tsx"
         ],
-        "matchedFiles": []
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Surface actionable error details (in English) when actor creation or profile queries fail, including a user-friendly message and an expandable technical detail section (e.g., the React Query error message) to help debug cases where deployment is successful but the browser remains stuck.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/components/QueryErrorPanel.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/Header.tsx"
-        ],
+        "summary": "Update backend authorization rules for basic user onboarding so that authenticated (non-anonymous) callers can read their own profile and create their initial profile, while keeping admin-only actions restricted (e.g., setting other users’ profiles, global deletes/reads).",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Improve geolocation failure handling in Ambulance and Police interfaces to detect and clearly explain permission/policy-related failures (including cases like \"Geolocation has been disabled in this document by permissions policy\"), and provide clear next steps to the user.",
-        "status": "missing",
+        "summary": "Improve the ProfileSetup UX to clearly display backend errors when saving the profile fails (e.g., unauthorized/trap), and ensure the Continue button returns to an actionable state after a failure.",
+        "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/geolocationErrors.ts",
-          "frontend/src/hooks/useGeolocationWatch.ts",
-          "frontend/src/pages/AmbulanceInterface.tsx",
-          "frontend/src/pages/PoliceInterface.tsx"
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
-        "matchedFiles": []
+        "matchedFiles": [
+          "frontend/src/components/ProfileSetup.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
-    "build-template/Dockerfile",
-    "build-template/LICENSE",
-    "build-template/README.md",
-    "build-template/deploy.sh",
-    "build-template/icp.yaml",
-    "build-template/src/backend/canister.yaml",
-    "build-template/src/frontend/canister.yaml",
-    "caffeine.lock.json",
     "feature_evidence.json",
+    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

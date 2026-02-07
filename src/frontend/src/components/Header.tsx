@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Siren, LogOut, User } from 'lucide-react';
+import ShareAppLinkControl from './ShareAppLinkControl';
+import LinkDomainInfoPanel from './LinkDomainInfoPanel';
 
 export default function Header() {
   const { identity, clear, isLoggingIn } = useInternetIdentity();
@@ -30,9 +32,11 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <ShareAppLinkControl />
+          <LinkDomainInfoPanel />
           {isAuthenticated && userProfile && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
               <User className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">{userProfile.name}</span>
               <Badge variant={userProfile.role === 'ambulance' ? 'default' : 'secondary'}>

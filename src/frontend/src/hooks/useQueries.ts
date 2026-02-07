@@ -31,10 +31,21 @@ export function useSaveCallerUserProfile() {
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
+      try {
+        await actor.saveCallerUserProfile(profile);
+      } catch (error: any) {
+        // Extract meaningful error message from backend trap
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('Unauthorized') || errorMessage.includes('trap')) {
+          throw new Error('Unable to save profile. Please try logging in again.');
+        }
+        throw new Error('Failed to save profile. Please try again.');
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    onSuccess: async () => {
+      // Invalidate and immediately refetch to ensure UI transitions properly
+      await queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      await queryClient.refetchQueries({ queryKey: ['currentUserProfile'] });
     },
   });
 }

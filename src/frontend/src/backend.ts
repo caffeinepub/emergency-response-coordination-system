@@ -123,6 +123,7 @@ export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deactivateSOS(): Promise<void>;
+    deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
@@ -138,6 +139,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setUserProfile(user: Principal, profile: UserProfile): Promise<void>;
     triggerSOS(coordinates: Coordinates): Promise<void>;
     updateAmbulanceLocation(coordinates: Coordinates): Promise<void>;
 }
@@ -183,6 +185,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deactivateSOS();
+            return result;
+        }
+    }
+    async deactivateSOSForAmbulance(arg0: AmbulanceId): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deactivateSOSForAmbulance(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deactivateSOSForAmbulance(arg0);
             return result;
         }
     }
@@ -393,6 +409,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async setUserProfile(arg0: Principal, arg1: UserProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }

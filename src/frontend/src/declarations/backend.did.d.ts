@@ -34,6 +34,7 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'deactivateSOS' : ActorMethod<[], undefined>,
+  'deactivateSOSForAmbulance' : ActorMethod<[AmbulanceId], undefined>,
   'deleteAmbulanceLocation' : ActorMethod<[AmbulanceId], undefined>,
   'getActiveSOSAlerts' : ActorMethod<[], Array<SOSAlert>>,
   'getAllLocations' : ActorMethod<[], Array<AmbulanceLocation>>,
@@ -58,6 +59,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setUserProfile' : ActorMethod<[Principal, UserProfile], undefined>,
   'triggerSOS' : ActorMethod<[Coordinates], undefined>,
   'updateAmbulanceLocation' : ActorMethod<[Coordinates], undefined>,
 }

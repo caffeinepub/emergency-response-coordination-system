@@ -3,10 +3,12 @@ import { useGetLocationsInRadius, useGetActiveSOSAlerts } from '../hooks/useQuer
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { Button } from '../components/ui/button';
 import { MapPin, Loader2, AlertCircle, Radio, Navigation } from 'lucide-react';
 import type { Coordinates, AmbulanceLocation, SOSAlert } from '../backend';
 
 const RADIUS_KM = 1.0;
+const LOCATION_TIMEOUT_SECONDS = 15; // Consider ambulance offline if no update in 15 seconds
 
 export default function PoliceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -14,8 +16,15 @@ export default function PoliceInterface() {
   const [previousAlertIds, setPreviousAlertIds] = useState<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const { data: ambulances = [], isLoading: ambulancesLoading } = useGetLocationsInRadius(location, RADIUS_KM);
+  const { data: ambulancesRaw = [], isLoading: ambulancesLoading } = useGetLocationsInRadius(location, RADIUS_KM);
   const { data: sosAlerts = [] } = useGetActiveSOSAlerts();
+
+  // Filter out stale ambulance locations (no update in last 15 seconds)
+  const ambulances = ambulancesRaw.filter((ambulance) => {
+    const timestamp = new Date(Number(ambulance.timestamp) / 1000000);
+    const secondsAgo = Math.floor((Date.now() - timestamp.getTime()) / 1000);
+    return secondsAgo <= LOCATION_TIMEOUT_SECONDS;
+  });
 
   // Initialize audio context
   useEffect(() => {
@@ -138,6 +147,20 @@ export default function PoliceInterface() {
     return sosAlerts.find((alert) => alert.ambulanceId.toString() === ambulanceId);
   };
 
+  const getDirectionsUrl = (destination: Coordinates): string => {
+    // If we have the police officer's location, use it as origin
+    if (location) {
+      return `https://www.google.com/maps/dir/?api=1&origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=driving`;
+    }
+    // Otherwise, just show the destination location
+    return `https://www.google.com/maps/search/?api=1&query=${destination.latitude},${destination.longitude}`;
+  };
+
+  const handleGetDirections = (coordinates: Coordinates) => {
+    const url = getDirectionsUrl(coordinates);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="container mx-auto min-h-[calc(100vh-8rem)] px-4 py-8">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -191,22 +214,33 @@ export default function PoliceInterface() {
                   return (
                     <Alert key={alert.ambulanceId.toString()} className="border-destructive bg-destructive/10 animate-pulse">
                       <img src="/assets/generated/alert-icon.dim_48x48.png" alt="" className="h-6 w-6" />
-                      <div className="flex-1">
-                        <AlertTitle className="text-destructive font-bold">🚨 EMERGENCY ALERT</AlertTitle>
-                        <AlertDescription className="space-y-1">
-                          <p className="font-mono text-xs">Ambulance ID: {alert.ambulanceId.toString().slice(0, 20)}...</p>
-                          <p className="text-xs">
-                            Location: {alert.coordinates.latitude.toFixed(6)}, {alert.coordinates.longitude.toFixed(6)}
-                          </p>
-                          <p className="text-xs">
-                            Time: {timestamp.toLocaleTimeString()}
-                          </p>
-                          {distance !== null && (
-                            <p className="text-xs font-bold text-destructive">
-                              Distance: {formatDistance(distance)}
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <AlertTitle className="text-destructive font-bold">🚨 EMERGENCY ALERT</AlertTitle>
+                          <AlertDescription className="space-y-1">
+                            <p className="font-mono text-xs">Ambulance ID: {alert.ambulanceId.toString().slice(0, 20)}...</p>
+                            <p className="text-xs">
+                              Location: {alert.coordinates.latitude.toFixed(6)}, {alert.coordinates.longitude.toFixed(6)}
                             </p>
-                          )}
-                        </AlertDescription>
+                            <p className="text-xs">
+                              Time: {timestamp.toLocaleTimeString()}
+                            </p>
+                            {distance !== null && (
+                              <p className="text-xs font-bold text-destructive">
+                                Distance: {formatDistance(distance)}
+                              </p>
+                            )}
+                          </AlertDescription>
+                        </div>
+                        <Button
+                          onClick={() => handleGetDirections(alert.coordinates)}
+                          variant="destructive"
+                          size="sm"
+                          className="w-full gap-2 font-semibold sm:w-auto"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Get Directions
+                        </Button>
                       </div>
                     </Alert>
                   );
@@ -325,6 +359,14 @@ export default function PoliceInterface() {
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
                   Distance calculated from your current position
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-emergency-blue">•</span>
+                  Ambulances offline for more than {LOCATION_TIMEOUT_SECONDS}s are hidden
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-emergency-blue">•</span>
+                  Tap "Get Directions" on SOS alerts to navigate to emergency location
                 </li>
               </ul>
             </div>

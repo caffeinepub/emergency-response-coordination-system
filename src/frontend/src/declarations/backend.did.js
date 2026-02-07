@@ -40,6 +40,7 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'deactivateSOS' : IDL.Func([], [], []),
+  'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),
   'deleteAmbulanceLocation' : IDL.Func([AmbulanceId], [], []),
   'getActiveSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
   'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),
@@ -79,6 +80,7 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
   'triggerSOS' : IDL.Func([Coordinates], [], []),
   'updateAmbulanceLocation' : IDL.Func([Coordinates], [], []),
 });
@@ -115,6 +117,7 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'deactivateSOS' : IDL.Func([], [], []),
+    'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),
     'deleteAmbulanceLocation' : IDL.Func([AmbulanceId], [], []),
     'getActiveSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
     'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),
@@ -154,6 +157,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
     'triggerSOS' : IDL.Func([Coordinates], [], []),
     'updateAmbulanceLocation' : IDL.Func([Coordinates], [], []),
   });
