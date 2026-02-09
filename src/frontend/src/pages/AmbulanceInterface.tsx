@@ -208,7 +208,7 @@ export default function AmbulanceInterface() {
                 <Alert className="border-destructive bg-destructive/10">
                   <AlertCircle className="h-4 w-4 text-destructive" />
                   <AlertDescription className="font-semibold text-destructive">
-                    SOS Alert Active - All nearby police units have been notified
+                    SOS Alert Active - Nearest 2 police units within 20 meters have been notified
                   </AlertDescription>
                 </Alert>
               )}
@@ -216,7 +216,7 @@ export default function AmbulanceInterface() {
               <p className="text-center text-sm text-muted-foreground">
                 {sosActive
                   ? 'Tap again to deactivate the SOS alert'
-                  : 'Tap the button to send an emergency SOS alert to all police units'}
+                  : 'Tap the button to send an emergency SOS alert to the nearest 2 police units'}
               </p>
             </div>
 
@@ -238,7 +238,7 @@ export default function AmbulanceInterface() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
-                  Police units within 1 km will receive immediate notification
+                  Nearest 2 police units within 20 meters will receive immediate notification
                 </li>
               </ul>
             </div>

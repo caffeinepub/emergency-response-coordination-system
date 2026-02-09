@@ -1,48 +1,42 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Unblock new-user onboarding after role selection (frontend)",
+  "title": "Police location updates + SOS targeting copy updates (20m, nearest 2 police)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Ensure profile creation completion reliably transitions the authenticated user out of ProfileSetup into the correct role interface without any admin token flow.",
+      "id": "REQ-3",
+      "summary": "Add periodic police location updates while Police interface is open and rely on backend-returned targeted SOS alerts without extra client filtering.",
       "acceptanceCriteria": [
-        "A brand-new user (principal not present in userProfiles) can submit the ProfileSetup form and the request succeeds (no trap).",
-        "After successful profile creation, the app transitions out of ProfileSetup and renders AmbulanceInterface when role is ambulance, and PoliceInterface when role is police.",
-        "Existing users can still update their name without breaking role-based routing.",
-        "No admin token / secret URL parameter is required for regular users to complete onboarding."
+        "`frontend/src/hooks/useQueries.ts` includes a new React Query mutation hook for the new backend police-location update method.",
+        "`frontend/src/pages/PoliceInterface.tsx` calls the police-location update mutation on an interval (and on initial location acquisition), similar to the ambulance location update behavior.",
+        "PoliceInterface continues to render SOS alerts from `useGetActiveSOSAlerts()` without client-side assumptions that all police see all alerts (i.e., no extra filtering needed beyond what backend returns)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Harden the onboarding profile save flow by ensuring a successful save triggers an immediate refresh of the ['currentUserProfile'] query (invalidate + refetch) so App.tsx can reliably transition to the correct role interface. Use the selected authorization component’s frontend guidance for calling getCallerUserProfile/saveCallerUserProfile and handling trap/unauthorized errors gracefully; verify the component's usage instructions before implementing."
+          "description": "Add a new React Query mutation hook (e.g., `useUpdatePoliceLocation`) that calls the backend actor's `updatePoliceLocation(coordinates)` capability, with appropriate actor-availability checks and query invalidation if needed."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Tighten role-based routing/state transitions after profile creation by relying on the refreshed current user profile (and not any URL/session token mechanisms) to decide between rendering ProfileSetup vs AmbulanceInterface vs PoliceInterface. Use the selected authorization component’s frontend guidance on profile setup gating and avoiding profile-setup flashes; verify the component's usage instructions before implementing."
+          "description": "Wire periodic police location updates: import and use the new `useUpdatePoliceLocation` mutation; upon acquiring geolocation and while the page is mounted, send an immediate location update and continue sending updates on an interval (mirroring the Ambulance interface pattern). Keep SOS alert rendering based solely on `useGetActiveSOSAlerts()` results (no added client-side filtering beyond what is already present)."
         }
       ]
     },
     {
-      "id": "REQ-3",
-      "summary": "Display actionable backend error messages in ProfileSetup when saving fails and ensure the Continue button can be used again immediately after a failed attempt.",
+      "id": "REQ-4",
+      "summary": "Update Ambulance UI copy to reflect SOS targeting to nearest 2 police within 20 meters.",
       "acceptanceCriteria": [
-        "If saving the profile fails, an English error message is shown in the ProfileSetup UI (not only console logging).",
-        "After a failed save attempt, the user can retry without needing a page refresh (button not stuck in a loading/disabled state beyond the request duration).",
-        "On success, the profile query is refreshed and the user is routed to the correct interface."
+        "In `frontend/src/pages/AmbulanceInterface.tsx`, replace the active SOS status text \"SOS Alert Active - All nearby police units have been notified\" with wording that states \"nearest 2 police\" and \"within 20 meters\".",
+        "In `frontend/src/pages/AmbulanceInterface.tsx` instructions, replace the line \"Police units within 1 km will receive immediate notification\" with \"Nearest 2 police units within 20 meters will receive immediate notification\" (or equivalent clear English).",
+        "Any other Ambulance UI copy implying broadcast-to-all is updated to match the new behavior."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ProfileSetup.tsx",
+          "path": "frontend/src/pages/AmbulanceInterface.tsx",
           "operation": "modify",
-          "description": "Add local UI error state to render an English error message when saveCallerUserProfile fails (e.g., unauthorized/trap), clear the error on retry, and ensure the loading/disabled state is tied only to the in-flight mutation so the Continue button becomes actionable again after failure. Use the selected authorization component’s frontend error-handling guidance for trap/unauthorized messages; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Expose/save error information cleanly from the save profile mutation (e.g., via thrown Error message) and ensure onSuccess refreshes the current profile query so ProfileSetup exits automatically after a successful retry. Use the selected authorization component’s frontend guidance for handling authorization failures gracefully; verify the component's usage instructions before implementing."
+          "description": "Update user-facing English copy to remove broadcast-to-all/1km implications: adjust the active SOS status message, the inactive SOS button helper text, and the 'How it works' bullet to explicitly state SOS targets the nearest 2 police units within 20 meters."
         }
       ]
     }

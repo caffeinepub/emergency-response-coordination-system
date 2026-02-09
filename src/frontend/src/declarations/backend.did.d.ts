@@ -19,10 +19,17 @@ export interface AmbulanceLocation {
 export type AppRole = { 'ambulance' : null } |
   { 'police' : null };
 export interface Coordinates { 'latitude' : number, 'longitude' : number }
+export type PoliceId = Principal;
+export interface PoliceLocation {
+  'timestamp' : Time,
+  'policeId' : PoliceId,
+  'coordinates' : Coordinates,
+}
 export interface SOSAlert {
   'active' : boolean,
   'ambulanceId' : AmbulanceId,
   'timestamp' : Time,
+  'targetPolice' : Array<PoliceId>,
   'coordinates' : Coordinates,
 }
 export type Time = bigint;
@@ -51,6 +58,7 @@ export interface _SERVICE {
     [bigint, bigint],
     Array<AmbulanceLocation>
   >,
+  'getPoliceLocation' : ActorMethod<[PoliceId], [] | [PoliceLocation]>,
   'getSOSAlert' : ActorMethod<[AmbulanceId], [] | [SOSAlert]>,
   'getSortedLocationsInRadius' : ActorMethod<
     [Coordinates, number],
@@ -62,6 +70,7 @@ export interface _SERVICE {
   'setUserProfile' : ActorMethod<[Principal, UserProfile], undefined>,
   'triggerSOS' : ActorMethod<[Coordinates], undefined>,
   'updateAmbulanceLocation' : ActorMethod<[Coordinates], undefined>,
+  'updatePoliceLocation' : ActorMethod<[Coordinates], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -66,6 +66,22 @@ export function useUpdateAmbulanceLocation() {
   });
 }
 
+// Police Location Queries
+export function useUpdatePoliceLocation() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (coordinates: Coordinates) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updatePoliceLocation(coordinates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['policeLocations'] });
+    },
+  });
+}
+
 export function useGetLocationsInRadius(center: Coordinates | null, radius: number) {
   const { actor, isFetching: actorFetching } = useActor();
 

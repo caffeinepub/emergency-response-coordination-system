@@ -89,8 +89,8 @@ export class ExternalBlob {
         return this;
     }
 }
+export type PoliceId = Principal;
 export type Time = bigint;
-export type AmbulanceId = Principal;
 export interface Coordinates {
     latitude: number;
     longitude: number;
@@ -99,6 +99,13 @@ export interface SOSAlert {
     active: boolean;
     ambulanceId: AmbulanceId;
     timestamp: Time;
+    targetPolice: Array<PoliceId>;
+    coordinates: Coordinates;
+}
+export type AmbulanceId = Principal;
+export interface PoliceLocation {
+    timestamp: Time;
+    policeId: PoliceId;
     coordinates: Coordinates;
 }
 export interface AmbulanceLocation {
@@ -134,7 +141,8 @@ export interface backendInterface {
     getLocationsCountInRadius(center: Coordinates, radius: number): Promise<bigint>;
     getLocationsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceLocation>>;
     getLocationsInTimeRange(start: bigint, end: bigint): Promise<Array<AmbulanceLocation>>;
-    getSOSAlert(ambulanceId: AmbulanceId): Promise<SOSAlert | null>;
+    getPoliceLocation(policeId: PoliceId): Promise<PoliceLocation | null>;
+    getSOSAlert(alertId: AmbulanceId): Promise<SOSAlert | null>;
     getSortedLocationsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceLocation>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
@@ -142,8 +150,9 @@ export interface backendInterface {
     setUserProfile(user: Principal, profile: UserProfile): Promise<void>;
     triggerSOS(coordinates: Coordinates): Promise<void>;
     updateAmbulanceLocation(coordinates: Coordinates): Promise<void>;
+    updatePoliceLocation(coordinates: Coordinates): Promise<void>;
 }
-import type { AmbulanceLocation as _AmbulanceLocation, AppRole as _AppRole, SOSAlert as _SOSAlert, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { AmbulanceLocation as _AmbulanceLocation, AppRole as _AppRole, PoliceLocation as _PoliceLocation, SOSAlert as _SOSAlert, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -342,18 +351,32 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getSOSAlert(arg0: AmbulanceId): Promise<SOSAlert | null> {
+    async getPoliceLocation(arg0: PoliceId): Promise<PoliceLocation | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getSOSAlert(arg0);
+                const result = await this.actor.getPoliceLocation(arg0);
                 return from_candid_opt_n11(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getSOSAlert(arg0);
+            const result = await this.actor.getPoliceLocation(arg0);
             return from_candid_opt_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getSOSAlert(arg0: AmbulanceId): Promise<SOSAlert | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSOSAlert(arg0);
+                return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSOSAlert(arg0);
+            return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
         }
     }
     async getSortedLocationsInRadius(arg0: Coordinates, arg1: number): Promise<Array<AmbulanceLocation>> {
@@ -401,28 +424,28 @@ export class Backend implements backendInterface {
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n13(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveCallerUserProfile(to_candid_UserProfile_n13(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
     async setUserProfile(arg0: Principal, arg1: UserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n13(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n12(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.setUserProfile(arg0, to_candid_UserProfile_n13(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
@@ -454,6 +477,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updatePoliceLocation(arg0: Coordinates): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePoliceLocation(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePoliceLocation(arg0);
+            return result;
+        }
+    }
 }
 function from_candid_AppRole_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AppRole): AppRole {
     return from_candid_variant_n8(_uploadFile, _downloadFile, value);
@@ -464,7 +501,10 @@ function from_candid_UserProfile_n5(_uploadFile: (file: ExternalBlob) => Promise
 function from_candid_UserRole_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n10(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_SOSAlert]): SOSAlert | null {
+function from_candid_opt_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PoliceLocation]): PoliceLocation | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_SOSAlert]): SOSAlert | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_AmbulanceLocation]): AmbulanceLocation | null {
@@ -501,16 +541,16 @@ function from_candid_variant_n8(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }): AppRole {
     return "ambulance" in value ? AppRole.ambulance : "police" in value ? AppRole.police : value;
 }
-function to_candid_AppRole_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): _AppRole {
-    return to_candid_variant_n15(_uploadFile, _downloadFile, value);
+function to_candid_AppRole_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): _AppRole {
+    return to_candid_variant_n16(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserProfile_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
-    return to_candid_record_n13(_uploadFile, _downloadFile, value);
+function to_candid_UserProfile_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
+    return to_candid_record_n14(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     role: AppRole;
 }): {
@@ -519,10 +559,10 @@ function to_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8
 } {
     return {
         name: value.name,
-        role: to_candid_AppRole_n14(_uploadFile, _downloadFile, value.role)
+        role: to_candid_AppRole_n15(_uploadFile, _downloadFile, value.role)
     };
 }
-function to_candid_variant_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): {
+function to_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): {
     ambulance: null;
 } | {
     police: null;

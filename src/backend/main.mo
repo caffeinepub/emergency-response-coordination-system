@@ -2,15 +2,18 @@ import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 import Array "mo:core/Array";
 import Time "mo:core/Time";
-import Iter "mo:core/Iter";
-import Nat64 "mo:core/Nat64";
+import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import Text "mo:core/Text";
 import Float "mo:core/Float";
+import List "mo:core/List";
+import Int "mo:core/Int";
 
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+(with migration = Migration.run)
 actor {
   type Coordinates = {
     latitude : Float;
@@ -18,7 +21,7 @@ actor {
   };
 
   type AmbulanceId = Principal;
-  type LocationId = Nat;
+  type PoliceId = Principal;
 
   type UserProfile = {
     name : Text;
@@ -36,15 +39,23 @@ actor {
     timestamp : Time.Time;
   };
 
+  type PoliceLocation = {
+    policeId : PoliceId;
+    coordinates : Coordinates;
+    timestamp : Time.Time;
+  };
+
   type SOSAlert = {
     ambulanceId : AmbulanceId;
     coordinates : Coordinates;
     timestamp : Time.Time;
     active : Bool;
+    targetPolice : [PoliceId];
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();
   let ambulanceLocations = Map.empty<AmbulanceId, AmbulanceLocation>();
+  let policeLocations = Map.empty<PoliceId, PoliceLocation>();
   let sosAlerts = Map.empty<AmbulanceId, SOSAlert>();
 
   let accessControlState = AccessControl.initState();
@@ -163,6 +174,30 @@ actor {
     ambulanceLocations.get(ambulanceId);
   };
 
+  // Police Location Management
+  public shared ({ caller }) func updatePoliceLocation(coordinates : Coordinates) : async () {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot update police location");
+    };
+    if (not isPolice(caller)) {
+      Runtime.trap("Unauthorized: Only police users can update police location");
+    };
+
+    let location : PoliceLocation = {
+      policeId = caller;
+      coordinates = coordinates;
+      timestamp = Time.now();
+    };
+    policeLocations.add(caller, location);
+  };
+
+  public query ({ caller }) func getPoliceLocation(policeId : PoliceId) : async ?PoliceLocation {
+    if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only police or admin can view police locations");
+    };
+    policeLocations.get(policeId);
+  };
+
   // Police queries for nearby ambulances
   public query ({ caller }) func getLocationsInRadius(center : Coordinates, radius : Float) : async [AmbulanceLocation] {
     if (caller.isAnonymous()) {
@@ -214,11 +249,43 @@ actor {
       Runtime.trap("Unauthorized: Only ambulance users can trigger SOS");
     };
 
+    let allPolice = policeLocations.toArray();
+
+    // First filter police within 20m (0.02 km) radius
+    let policeWithinRadius = allPolice.filter(
+      func((_, location)) {
+        calculateDistance(coordinates, location.coordinates) <= 0.02;
+      }
+    );
+
+    let policeWithDistances = policeWithinRadius.map(
+      func((id, location)) {
+        (id, location, calculateDistance(coordinates, location.coordinates));
+      }
+    );
+
+    let list = List.fromArray<(PoliceId, PoliceLocation, Float)>(policeWithDistances);
+
+    let sortedList = List.fromArray<(PoliceId, PoliceLocation, Float)>(
+      list.toArray().sort(
+        func(a, b) {
+          Float.compare(a.2, b.2);
+        }
+      )
+    );
+
+    // Take only the nearest 2 police within the radius
+    let filteredList = sortedList.toArray().sliceToArray(0, Int.min(2, sortedList.size().toInt()));
+    let targetPolice = filteredList.map(
+      func((id, _, _)) { id }
+    );
+
     let alert : SOSAlert = {
       ambulanceId = caller;
       coordinates = coordinates;
       timestamp = Time.now();
       active = true;
+      targetPolice;
     };
     sosAlerts.add(caller, alert);
   };
@@ -230,15 +297,15 @@ actor {
 
     switch (sosAlerts.get(caller)) {
       case (?alert) {
-        // Ambulance can deactivate their own SOS
-        if (not isAmbulance(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-          Runtime.trap("Unauthorized: Only ambulance owner or admin can deactivate SOS");
+        if (alert.ambulanceId != caller) {
+          Runtime.trap("Unauthorized: Can only deactivate your own SOS");
         };
         let updatedAlert : SOSAlert = {
           ambulanceId = alert.ambulanceId;
           coordinates = alert.coordinates;
           timestamp = alert.timestamp;
           active = false;
+          targetPolice = alert.targetPolice;
         };
         sosAlerts.add(caller, updatedAlert);
       };
@@ -260,6 +327,7 @@ actor {
           coordinates = alert.coordinates;
           timestamp = alert.timestamp;
           active = false;
+          targetPolice = alert.targetPolice;
         };
         sosAlerts.add(ambulanceId, updatedAlert);
       };
@@ -273,26 +341,51 @@ actor {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous users cannot view SOS alerts");
     };
-    if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
+
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      let activeAlerts = sosAlerts.toArray().filter(
+        func((_, alert)) {
+          alert.active;
+        }
+      );
+      return activeAlerts.map<(AmbulanceId, SOSAlert), SOSAlert>(func((_, alert)) { alert });
+    };
+
+    if (not isPolice(caller)) {
       Runtime.trap("Unauthorized: Only police or admin can view SOS alerts");
     };
 
-    let activeAlerts = sosAlerts.toArray().filter(
+    let activeAlertsForCaller = sosAlerts.toArray().filter(
       func((_, alert)) {
-        alert.active;
+        alert.active and alert.targetPolice.any(func(id) { id == caller });
       }
     );
-    activeAlerts.map<(AmbulanceId, SOSAlert), SOSAlert>(func((_, alert)) { alert });
+    activeAlertsForCaller.map<(AmbulanceId, SOSAlert), SOSAlert>(func((_, alert)) { alert });
   };
 
-  public query ({ caller }) func getSOSAlert(ambulanceId : AmbulanceId) : async ?SOSAlert {
+  public query ({ caller }) func getSOSAlert(alertId : AmbulanceId) : async ?SOSAlert {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous users cannot view SOS alerts");
     };
-    if (caller != ambulanceId and not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own SOS or must be police/admin");
+
+    switch (sosAlerts.get(alertId)) {
+      case (?alert) {
+        if (AccessControl.isAdmin(accessControlState, caller)) {
+          return ?alert;
+        };
+
+        if (not isPolice(caller)) {
+          Runtime.trap("Unauthorized: Only police or admin can view SOS alerts");
+        };
+
+        let isTargetPolice = alert.targetPolice.any(func(id) { id == caller });
+        if (not isTargetPolice) {
+          return null;
+        };
+        ?alert;
+      };
+      case (null) { null };
     };
-    sosAlerts.get(ambulanceId);
   };
 
   // Admin functions

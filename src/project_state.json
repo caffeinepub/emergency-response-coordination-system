@@ -1,41 +1,55 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
-  "known_issues": [
-    "Google sign-in for another user gets stuck after clicking Continue at the interface selection step (police/ambulance) and does not proceed."
+  "summary": "Implement SOS alert targeting logic to notify only the nearest police users (2) within a 20 meter radius, instead of passive/broadcast viewing.",
+  "architectural_notes": [
+    "SOS alert delivery should select nearest police users (count=2) within 20m radius instead of relying on police clients polling/broadcast viewing."
   ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-fix-profile-creation-so-that-a-newly-authenticated-user-signing-in-with-their-own-internet-identity-google-backed-ii-can-successfully-create-an-initial-profile-and-proceed-past-the-role-selection-step-police-ambulance-without-requiring-admin-setup",
-      "title": "Fix profile creation so that a newly authenticated user (signing in with their own Internet Identity / Google-backed II) can successfully create an initial profile and proceed past the role selection step (police/ambulance) without requiring admin setup.",
+      "id": "feature-update-the-frontend-so-police-clients-send-periodic-police-location-updates-to-the-backend-while-the-police-interface-is-open-and-ensure-the-police-sos-alerts-view-only-reflects-targeted-alerts-returned-by-the-backend",
+      "title": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
       "reqIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-the-profilesetup-ux-to-clearly-display-backend-errors-when-saving-the-profile-fails-e-g-unauthorized-trap-and-ensure-the-continue-button-returns-to-an-actionable-state-after-a-failure",
-      "title": "Improve the ProfileSetup UX to clearly display backend errors when saving the profile fails (e.g., unauthorized/trap), and ensure the Continue button returns to an actionable state after a failure.",
+      "id": "feature-update-user-facing-copy-in-the-ambulance-interface-to-reflect-sos-targeting-to-the-nearest-2-police-within-20-meters-replacing-existing-statements-that-imply-broadcasting-to-all-police-or-using-a-1-km-radius",
+      "title": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
       "reqIds": [
-        "REQ-3"
+        "REQ-4"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
+      "id": "AR-1",
+      "summary": "Update SOS notifications to alert only the nearest 2 police users within a 20 meter radius.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
       "id": "AR-2",
-      "summary": "Update backend authorization rules for basic user onboarding so that authenticated (non-anonymous) callers can read their own profile and create their initial profile, while keeping admin-only actions restricted (e.g., setting other users’ profiles, global deletes/reads).",
+      "summary": "Implement SOS targeting so that when an ambulance triggers SOS, the backend selects and records only the nearest 2 police users within a 20 meter radius (0.02 km), and only those police users can retrieve/see that active SOS alert via SOS alert queries.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add backend APIs to allow police users to continuously update their own location (similar to ambulance location updates), and ensure these locations are used for SOS nearest-police selection.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix new user onboarding stuck after clicking Continue on role selection",
+  "projectName": "Target SOS alerts to nearest 2 police within 20 meters",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

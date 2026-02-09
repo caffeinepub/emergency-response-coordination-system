@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useGetLocationsInRadius, useGetActiveSOSAlerts } from '../hooks/useQueries';
+import { useGetLocationsInRadius, useGetActiveSOSAlerts, useUpdatePoliceLocation } from '../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
@@ -9,15 +9,18 @@ import type { Coordinates, AmbulanceLocation, SOSAlert } from '../backend';
 
 const RADIUS_KM = 1.0;
 const LOCATION_TIMEOUT_SECONDS = 15; // Consider ambulance offline if no update in 15 seconds
+const POLICE_LOCATION_UPDATE_INTERVAL = 3000; // 3 seconds
 
 export default function PoliceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [previousAlertIds, setPreviousAlertIds] = useState<Set<string>>(new Set());
   const audioContextRef = useRef<AudioContext | null>(null);
+  const locationUpdateTimerRef = useRef<number | null>(null);
 
   const { data: ambulancesRaw = [], isLoading: ambulancesLoading } = useGetLocationsInRadius(location, RADIUS_KM);
   const { data: sosAlerts = [] } = useGetActiveSOSAlerts();
+  const updatePoliceLocation = useUpdatePoliceLocation();
 
   // Filter out stale ambulance locations (no update in last 15 seconds)
   const ambulances = ambulancesRaw.filter((ambulance) => {
@@ -101,6 +104,27 @@ export default function PoliceInterface() {
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
+
+  // Send police location updates to backend every 3 seconds
+  useEffect(() => {
+    if (!location) return;
+
+    // Send initial update immediately
+    updatePoliceLocation.mutate(location);
+
+    // Set up interval for continuous updates
+    locationUpdateTimerRef.current = window.setInterval(() => {
+      if (location) {
+        updatePoliceLocation.mutate(location);
+      }
+    }, POLICE_LOCATION_UPDATE_INTERVAL);
+
+    return () => {
+      if (locationUpdateTimerRef.current) {
+        clearInterval(locationUpdateTimerRef.current);
+      }
+    };
+  }, [location?.latitude, location?.longitude]);
 
   // Detect new SOS alerts and play sound
   useEffect(() => {
@@ -299,76 +323,44 @@ export default function PoliceInterface() {
                               <CardTitle className="text-sm">Ambulance</CardTitle>
                             </div>
                             {hasAlert && (
-                              <Badge variant="destructive" className="animate-pulse gap-1">
-                                <AlertCircle className="h-3 w-3" />
+                              <Badge variant="destructive" className="animate-pulse">
                                 SOS
                               </Badge>
                             )}
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-2 text-xs">
-                          <div className="font-mono text-muted-foreground">
-                            ID: {ambulance.ambulanceId.toString().slice(0, 15)}...
-                          </div>
                           <div className="space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Latitude:</span>
-                              <span className="font-medium">{ambulance.coordinates.latitude.toFixed(6)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Longitude:</span>
-                              <span className="font-medium">{ambulance.coordinates.longitude.toFixed(6)}</span>
-                            </div>
-                            {location && (
-                              <div className="flex justify-between border-t border-border pt-2">
-                                <span className="text-muted-foreground">Distance:</span>
-                                <span className={`font-semibold ${hasAlert ? 'text-destructive' : 'text-emergency-blue'}`}>
-                                  {formatDistance(distance)}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-muted-foreground">
-                              <span>Updated:</span>
-                              <span>{secondsAgo}s ago</span>
-                            </div>
+                            <p className="font-mono text-muted-foreground">
+                              ID: {ambulance.ambulanceId.toString().slice(0, 12)}...
+                            </p>
+                            <p className="text-muted-foreground">
+                              Distance: <span className="font-semibold text-foreground">{formatDistance(distance)}</span>
+                            </p>
+                            <p className="text-muted-foreground">
+                              Updated: <span className="font-semibold text-foreground">{secondsAgo}s ago</span>
+                            </p>
                           </div>
+                          {hasAlert && (
+                            <Button
+                              onClick={() => {
+                                const alert = getSOSAlert(ambulance.ambulanceId.toString());
+                                if (alert) handleGetDirections(alert.coordinates);
+                              }}
+                              variant="destructive"
+                              size="sm"
+                              className="w-full gap-1 text-xs"
+                            >
+                              <Navigation className="h-3 w-3" />
+                              Navigate
+                            </Button>
+                          )}
                         </CardContent>
                       </Card>
                     );
                   })}
                 </div>
               )}
-            </div>
-
-            {/* Info Panel */}
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="mb-2 font-semibold">System Status</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Real-time location updates every 2-3 seconds
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Audio alerts play when new SOS signals are detected
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Red markers indicate active emergency situations
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Distance calculated from your current position
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Ambulances offline for more than {LOCATION_TIMEOUT_SECONDS}s are hidden
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-emergency-blue">•</span>
-                  Tap "Get Directions" on SOS alerts to navigate to emergency location
-                </li>
-              </ul>
             </div>
           </CardContent>
         </Card>

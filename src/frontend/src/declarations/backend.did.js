@@ -15,6 +15,7 @@ export const UserRole = IDL.Variant({
 });
 export const AmbulanceId = IDL.Principal;
 export const Time = IDL.Int;
+export const PoliceId = IDL.Principal;
 export const Coordinates = IDL.Record({
   'latitude' : IDL.Float64,
   'longitude' : IDL.Float64,
@@ -23,6 +24,7 @@ export const SOSAlert = IDL.Record({
   'active' : IDL.Bool,
   'ambulanceId' : AmbulanceId,
   'timestamp' : Time,
+  'targetPolice' : IDL.Vec(PoliceId),
   'coordinates' : Coordinates,
 });
 export const AmbulanceLocation = IDL.Record({
@@ -35,6 +37,11 @@ export const AppRole = IDL.Variant({
   'police' : IDL.Null,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+export const PoliceLocation = IDL.Record({
+  'timestamp' : Time,
+  'policeId' : PoliceId,
+  'coordinates' : Coordinates,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -67,6 +74,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(AmbulanceLocation)],
       ['query'],
     ),
+  'getPoliceLocation' : IDL.Func(
+      [PoliceId],
+      [IDL.Opt(PoliceLocation)],
+      ['query'],
+    ),
   'getSOSAlert' : IDL.Func([AmbulanceId], [IDL.Opt(SOSAlert)], ['query']),
   'getSortedLocationsInRadius' : IDL.Func(
       [Coordinates, IDL.Float64],
@@ -83,6 +95,7 @@ export const idlService = IDL.Service({
   'setUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
   'triggerSOS' : IDL.Func([Coordinates], [], []),
   'updateAmbulanceLocation' : IDL.Func([Coordinates], [], []),
+  'updatePoliceLocation' : IDL.Func([Coordinates], [], []),
 });
 
 export const idlInitArgs = [];
@@ -95,6 +108,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const AmbulanceId = IDL.Principal;
   const Time = IDL.Int;
+  const PoliceId = IDL.Principal;
   const Coordinates = IDL.Record({
     'latitude' : IDL.Float64,
     'longitude' : IDL.Float64,
@@ -103,6 +117,7 @@ export const idlFactory = ({ IDL }) => {
     'active' : IDL.Bool,
     'ambulanceId' : AmbulanceId,
     'timestamp' : Time,
+    'targetPolice' : IDL.Vec(PoliceId),
     'coordinates' : Coordinates,
   });
   const AmbulanceLocation = IDL.Record({
@@ -112,6 +127,11 @@ export const idlFactory = ({ IDL }) => {
   });
   const AppRole = IDL.Variant({ 'ambulance' : IDL.Null, 'police' : IDL.Null });
   const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+  const PoliceLocation = IDL.Record({
+    'timestamp' : Time,
+    'policeId' : PoliceId,
+    'coordinates' : Coordinates,
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -144,6 +164,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(AmbulanceLocation)],
         ['query'],
       ),
+    'getPoliceLocation' : IDL.Func(
+        [PoliceId],
+        [IDL.Opt(PoliceLocation)],
+        ['query'],
+      ),
     'getSOSAlert' : IDL.Func([AmbulanceId], [IDL.Opt(SOSAlert)], ['query']),
     'getSortedLocationsInRadius' : IDL.Func(
         [Coordinates, IDL.Float64],
@@ -160,6 +185,7 @@ export const idlFactory = ({ IDL }) => {
     'setUserProfile' : IDL.Func([IDL.Principal, UserProfile], [], []),
     'triggerSOS' : IDL.Func([Coordinates], [], []),
     'updateAmbulanceLocation' : IDL.Func([Coordinates], [], []),
+    'updatePoliceLocation' : IDL.Func([Coordinates], [], []),
   });
 };
 

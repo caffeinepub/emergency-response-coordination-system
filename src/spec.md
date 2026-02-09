@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Unblock new user onboarding so newly authenticated users can create their initial profile and proceed past role selection (police/ambulance) without any admin setup, while preserving admin-only protections.
+**Goal:** Target ambulance-triggered SOS alerts to only the nearest 2 police officers within a 20 meter radius, based on recently-updated police locations.
 
 **Planned changes:**
-- Adjust backend authorization to allow authenticated callers to create their own initial profile and read their own profile, while keeping admin-only methods restricted and blocking anonymous access.
-- Fix profile creation flow so a brand-new user can submit ProfileSetup successfully and the app routes to the correct interface based on selected role (AmbulanceInterface or PoliceInterface).
-- Improve ProfileSetup error handling to show clear English error messages on save failure and ensure the Continue button/loading state recovers so users can retry without refreshing.
+- Add backend support for police users to periodically update and store their current location (with timestamps) in canister state.
+- Update backend SOS creation so it selects and records up to the nearest 2 police users within 20 meters of the SOS coordinates (ignoring stale location entries).
+- Restrict backend SOS alert queries so police users only retrieve active alerts targeted to them (admins still see all).
+- Update the Police frontend to send periodic police location updates while the Police interface is open, and rely on backend-targeted SOS results.
+- Update Ambulance UI copy to state SOS targets the nearest 2 police within 20 meters (replacing any “all police” / “1 km” wording).
 
-**User-visible outcome:** A new user can sign in, choose police or ambulance, save their profile, and be taken into the correct interface; if saving fails, they see an error message and can retry immediately.
+**User-visible outcome:** Ambulance SOS alerts are no longer broadcast; only the nearest 2 police within 20 meters (when available) can see the active SOS alert, and the UI messaging reflects this behavior.

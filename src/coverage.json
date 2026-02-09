@@ -1,57 +1,69 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T10:11:14.758Z",
+  "generatedAt": "2026-02-07T11:17:56.944Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 4,
     "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix profile creation so that a newly authenticated user (signing in with their own Internet Identity / Google-backed II) can successfully create an initial profile and proceed past the role selection step (police/ambulance) without requiring admin setup.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts"
-        ]
+        "summary": "Implement SOS targeting so that when an ambulance triggers SOS, the backend selects and records only the nearest 2 police users within a 20 meter radius (0.02 km), and only those police users can retrieve/see that active SOS alert via SOS alert queries.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Update backend authorization rules for basic user onboarding so that authenticated (non-anonymous) callers can read their own profile and create their initial profile, while keeping admin-only actions restricted (e.g., setting other users’ profiles, global deletes/reads).",
+        "summary": "Add backend APIs to allow police users to continuously update their own location (similar to ambulance location updates), and ensure these locations are used for SOS nearest-police selection.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Improve the ProfileSetup UX to clearly display backend errors when saving the profile fails (e.g., unauthorized/trap), and ensure the Continue button returns to an actionable state after a failure.",
+        "summary": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/PoliceInterface.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/ProfileSetup.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/PoliceInterface.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/AmbulanceInterface.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/AmbulanceInterface.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/ProfileSetup.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/AmbulanceInterface.tsx",
+    "frontend/src/pages/PoliceInterface.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

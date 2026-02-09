@@ -7,8 +7,8 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export type PoliceId = Principal;
 export type Time = bigint;
-export type AmbulanceId = Principal;
 export interface Coordinates {
     latitude: number;
     longitude: number;
@@ -17,6 +17,13 @@ export interface SOSAlert {
     active: boolean;
     ambulanceId: AmbulanceId;
     timestamp: Time;
+    targetPolice: Array<PoliceId>;
+    coordinates: Coordinates;
+}
+export type AmbulanceId = Principal;
+export interface PoliceLocation {
+    timestamp: Time;
+    policeId: PoliceId;
     coordinates: Coordinates;
 }
 export interface AmbulanceLocation {
@@ -51,7 +58,8 @@ export interface backendInterface {
     getLocationsCountInRadius(center: Coordinates, radius: number): Promise<bigint>;
     getLocationsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceLocation>>;
     getLocationsInTimeRange(start: bigint, end: bigint): Promise<Array<AmbulanceLocation>>;
-    getSOSAlert(ambulanceId: AmbulanceId): Promise<SOSAlert | null>;
+    getPoliceLocation(policeId: PoliceId): Promise<PoliceLocation | null>;
+    getSOSAlert(alertId: AmbulanceId): Promise<SOSAlert | null>;
     getSortedLocationsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceLocation>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
@@ -59,4 +67,5 @@ export interface backendInterface {
     setUserProfile(user: Principal, profile: UserProfile): Promise<void>;
     triggerSOS(coordinates: Coordinates): Promise<void>;
     updateAmbulanceLocation(coordinates: Coordinates): Promise<void>;
+    updatePoliceLocation(coordinates: Coordinates): Promise<void>;
 }
