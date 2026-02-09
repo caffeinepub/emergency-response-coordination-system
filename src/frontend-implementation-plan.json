@@ -1,42 +1,48 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Police location updates + SOS targeting copy updates (20m, nearest 2 police)",
+  "title": "Adjust location update cadence to 12s and SOS radius copy to 30m (frontend)",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Add periodic police location updates while Police interface is open and rely on backend-returned targeted SOS alerts without extra client filtering.",
+      "id": "REQ-1",
+      "summary": "Update all periodic location update/poll intervals to 12 seconds and align any UI text that mentions the update frequency.",
       "acceptanceCriteria": [
-        "`frontend/src/hooks/useQueries.ts` includes a new React Query mutation hook for the new backend police-location update method.",
-        "`frontend/src/pages/PoliceInterface.tsx` calls the police-location update mutation on an interval (and on initial location acquisition), similar to the ambulance location update behavior.",
-        "PoliceInterface continues to render SOS alerts from `useGetActiveSOSAlerts()` without client-side assumptions that all police see all alerts (i.e., no extra filtering needed beyond what backend returns)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a new React Query mutation hook (e.g., `useUpdatePoliceLocation`) that calls the backend actor's `updatePoliceLocation(coordinates)` capability, with appropriate actor-availability checks and query invalidation if needed."
-        },
-        {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
-          "operation": "modify",
-          "description": "Wire periodic police location updates: import and use the new `useUpdatePoliceLocation` mutation; upon acquiring geolocation and while the page is mounted, send an immediate location update and continue sending updates on an interval (mirroring the Ambulance interface pattern). Keep SOS alert rendering based solely on `useGetActiveSOSAlerts()` results (no added client-side filtering beyond what is already present)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Update Ambulance UI copy to reflect SOS targeting to nearest 2 police within 20 meters.",
-      "acceptanceCriteria": [
-        "In `frontend/src/pages/AmbulanceInterface.tsx`, replace the active SOS status text \"SOS Alert Active - All nearby police units have been notified\" with wording that states \"nearest 2 police\" and \"within 20 meters\".",
-        "In `frontend/src/pages/AmbulanceInterface.tsx` instructions, replace the line \"Police units within 1 km will receive immediate notification\" with \"Nearest 2 police units within 20 meters will receive immediate notification\" (or equivalent clear English).",
-        "Any other Ambulance UI copy implying broadcast-to-all is updated to match the new behavior."
+        "Ambulance location updates are sent to the backend every 12 seconds (not 3).",
+        "Police location updates are sent to the backend every 12 seconds (not 3).",
+        "Police-side polling for nearby ambulance locations runs every 12 seconds (not 3).",
+        "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AmbulanceInterface.tsx",
           "operation": "modify",
-          "description": "Update user-facing English copy to remove broadcast-to-all/1km implications: adjust the active SOS status message, the inactive SOS button helper text, and the 'How it works' bullet to explicitly state SOS targets the nearest 2 police units within 20 meters."
+          "description": "Change the ambulance location sending interval constant from 3s to 12s (e.g., LOCATION_UPDATE_INTERVAL = 12000) and ensure any inline comments/UI copy that explicitly mentions the old 3-second cadence is updated to match 12 seconds. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Change police location sending interval from 3s to 12s (e.g., POLICE_LOCATION_UPDATE_INTERVAL = 12000) and update any visible UI copy (e.g., the monitoring badge text) that mentions live updates every 3s so it reflects 12s. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update the React Query polling interval used for police-side refreshing of nearby ambulance locations to 12 seconds (refetchInterval for useGetLocationsInRadius). Keep unrelated radii (e.g., RADIUS_KM=1.0) unchanged. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Update SOS targeting radius references in the ambulance UI from 20m to 30m (frontend copy changes only in this plan).",
+      "acceptanceCriteria": [
+        "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
+        "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
+        "Behaviorally, a police unit at ~25m can be selected/targeted, while one at ~35m is not (assuming both have recent locations)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AmbulanceInterface.tsx",
+          "operation": "modify",
+          "description": "Update ambulance-side SOS UI copy to reference 30 meters instead of 20 meters (e.g., the active SOS alert text and the relevant \"How it works\" bullet). Do not change SOS duration or the number of police units referenced (keep nearest 2). Verify the component's usage instructions before implementing."
         }
       ]
     }

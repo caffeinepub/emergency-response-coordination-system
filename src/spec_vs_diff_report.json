@@ -1,49 +1,64 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T11:17:56.942Z",
-  "summary": "Diff introduces new backend state/types for police locations and targeted SOS alerts (including a migration adding `targetPolice`), and adds a frontend React Query mutation hook for updating police location. However, the core backend SOS-targeting logic, backend police-location update API, and the frontend Police interval update behavior and Ambulance copy updates are not evidenced in the provided truncated diffs.",
+  "generatedAt": "2026-02-09T02:45:41.641Z",
+  "summary": "Frontend changes show updates toward a 12s refresh interval (React Query polling set to 12s; ambulance location update interval constant set to 12s; police interface constant set to 12s). However, the diff summary is truncated and does not provide clear evidence that (a) police location updates are actually sent on a 12s timer, (b) all UI copy mentioning the old interval was updated, or (c) backend SOS targeting radius logic was changed to 30m (0.03 km). There are also unrelated changes to profile-save error handling not requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend selects and records only the nearest 2 police users within 20 meters when an ambulance triggers SOS, and only targeted police (or admins) can retrieve active SOS alerts.",
-      "reason": "Although `SOSAlert` now includes `targetPolice` and distance helpers exist, the diff excerpt does not show `triggerSOS(coordinates)` computing/filtering/sorting police by distance, applying the 0.02 km radius and staleness cutoff, persisting selected recipients, or `getActiveSOSAlerts()` restricting results to targeted police principals (with admin override).",
+      "requirement": "Police location updates are sent to the backend every 12 seconds (not 3).",
+      "reason": "PoliceInterface.tsx shows a 12-second constant, but the truncated diff does not show the interval/timer code that actually calls useUpdatePoliceLocation on that cadence.",
       "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo"
+        "frontend/src/pages/PoliceInterface.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions).",
+      "reason": "The diff summary does not include the relevant UI copy text, so there is no direct evidence that user-facing text mentioning the old interval was updated everywhere it appears.",
+      "evidence": [
+        "frontend/src/pages/AmbulanceInterface.tsx (truncated)",
+        "frontend/src/pages/PoliceInterface.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Add a shared backend method for police users to update their own timestamped location, rejecting anonymous/non-police callers, and use these locations (with a staleness cutoff) for SOS recipient selection.",
-      "reason": "State for `policeLocations` and `PoliceLocation` type are added, but the diff excerpt does not show an `updatePoliceLocation` shared method implementation, role/anonymous rejection traps, or any timestamp staleness cutoff being defined/applied during SOS selection.",
+      "requirement": "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
+      "reason": "backend/main.mo is truncated and the SOS targeting selection/radius constant/change is not visible in the provided excerpt, so the backend radius change to 0.03 km cannot be verified from the diff summary.",
       "evidence": [
-        "backend/main.mo"
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "Frontend periodically sends police location updates while PoliceInterface is open, and continues to render SOS alerts directly from backend-targeted results.",
-      "reason": "`useUpdatePoliceLocation` hook is present, but the provided PoliceInterface diff is truncated before showing any interval/on-initial-location calls to the mutation.",
+      "id": "REQ-2",
+      "requirement": "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
+      "reason": "The diff summary does not show the SOS explanatory/status copy content; the file summary claims it is updated, but there is no direct textual evidence in the truncated snippet.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/PoliceInterface.tsx"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Update Ambulance interface copy to state SOS targets the nearest 2 police within 20 meters (replacing broadcast/1 km wording).",
-      "reason": "The provided AmbulanceInterface diff excerpt does not include the UI text sections specified in the acceptance criteria, so the required copy changes cannot be verified from the diff evidence shown.",
-      "evidence": [
-        "frontend/src/pages/AmbulanceInterface.tsx"
+        "frontend/src/pages/AmbulanceInterface.tsx (truncated)",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "hallucinated_features": [],
+  "hallucinated_features": [
+    {
+      "description": "Enhanced error handling and user messaging for saveCallerUserProfile (trap/unauthorized parsing, retry-friendly messaging) beyond the requested interval/radius changes.",
+      "reason": "BuildRequest only asks to change refresh interval to 12s and SOS radius to 30m; profile-save mutation behavior changes are not requested.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts (truncated)"
+      ]
+    },
+    {
+      "description": "Changed React Query caching behavior for getLocationsInRadius (staleTime=10000) in addition to changing the polling interval.",
+      "reason": "Only the polling/refresh interval was requested; staleTime adjustments were not mentioned.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts (truncated)"
+      ]
+    }
+  ],
   "confidence": 0.56,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AmbulanceInterface.tsx",

@@ -1,26 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Implement SOS alert targeting logic to notify only the nearest police users (2) within a 20 meter radius, instead of passive/broadcast viewing.",
-  "architectural_notes": [
-    "SOS alert delivery should select nearest police users (count=2) within 20m radius instead of relying on police clients polling/broadcast viewing."
-  ],
+  "summary": "Project includes SOS behavior with periodic coordinate refresh and radius-based logic; adjust refresh interval and radius parameters.",
+  "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-frontend-so-police-clients-send-periodic-police-location-updates-to-the-backend-while-the-police-interface-is-open-and-ensure-the-police-sos-alerts-view-only-reflects-targeted-alerts-returned-by-the-backend",
-      "title": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
+      "id": "feature-change-the-coordinate-refresh-update-interval-to-12-seconds-wherever-the-app-periodically-sends-or-refreshes-location-coordinates-ambulance-and-police-location-updates-and-police-side-polling-of-nearby-ambulance-locations-update-any-user-facing-text-that-mentions-the-old-interval-so-it-matches-12-seconds",
+      "title": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
       "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-user-facing-copy-in-the-ambulance-interface-to-reflect-sos-targeting-to-the-nearest-2-police-within-20-meters-replacing-existing-statements-that-imply-broadcasting-to-all-police-or-using-a-1-km-radius",
-      "title": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
+      "id": "feature-change-the-sos-targeting-radius-from-20-meters-to-30-meters-update-backend-sos-targeting-logic-to-use-30-meters-when-selecting-police-units-and-update-ambulance-ui-copy-that-references-the-radius-so-it-says-30-meters",
+      "title": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
       "reqIds": [
-        "REQ-4"
+        "REQ-2"
       ],
       "version": 1
     }
@@ -28,28 +26,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update SOS notifications to alert only the nearest 2 police users within a 20 meter radius.",
+      "summary": "Change coordinate refresh interval to 12 seconds and set radius to 30 meters",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Implement SOS targeting so that when an ambulance triggers SOS, the backend selects and records only the nearest 2 police users within a 20 meter radius (0.02 km), and only those police users can retrieve/see that active SOS alert via SOS alert queries.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Add backend APIs to allow police users to continuously update their own location (similar to ambulance location updates), and ensure these locations are used for SOS nearest-police selection.",
-      "reqIds": [
-        "REQ-2"
-      ],
       "status": "pending"
     }
   ],
-  "projectName": "Target SOS alerts to nearest 2 police within 20 meters",
+  "projectName": "Update coordinate refresh interval to 12s and SOS radius to 30m",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

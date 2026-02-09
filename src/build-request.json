@@ -1,94 +1,65 @@
 {
   "kind": "build_request",
-  "title": "Target SOS alerts to nearest 2 police within 20 meters",
+  "title": "Update coordinate refresh interval to 12s and SOS radius to 30m",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement SOS targeting so that when an ambulance triggers SOS, the backend selects and records only the nearest 2 police users within a 20 meter radius (0.02 km), and only those police users can retrieve/see that active SOS alert via SOS alert queries.",
-      "target": "backend",
+      "text": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-10"
         ],
         "quotes": [
-          "yes, update SOS to notify only the nearest 2 police also change the radius to 20 meters bro"
+          "Bro change the refresh change time of the coordinates to 12 seconds and also change the radius to 30 meters"
         ]
       },
       "acceptanceCriteria": [
-        "Backend stores police location updates in canister state (so nearest-police selection is possible).",
-        "When `triggerSOS(coordinates)` is called by an ambulance, the canister computes distances from the SOS coordinates to all police users with a recent known location, filters to those within 0.02 km, sorts by distance, and selects at most 2 recipients.",
-        "`getActiveSOSAlerts()` returns only active alerts that are targeted to the calling police principal (admins can still view all active alerts).",
-        "If fewer than 2 police are within 0.02 km (or none), the SOS alert is still created as active, and the recipients list contains the matching subset (possibly empty)."
+        "Ambulance location updates are sent to the backend every 12 seconds (not 3).",
+        "Police location updates are sent to the backend every 12 seconds (not 3).",
+        "Police-side polling for nearby ambulance locations runs every 12 seconds (not 3).",
+        "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add backend APIs to allow police users to continuously update their own location (similar to ambulance location updates), and ensure these locations are used for SOS nearest-police selection.",
-      "target": "backend",
+      "text": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-10"
         ],
         "quotes": [
-          "notify only the nearest 2 police also change the radius to 20 meters"
+          "Bro change the refresh change time of the coordinates to 12 seconds and also change the radius to 30 meters"
         ]
       },
       "acceptanceCriteria": [
-        "A new shared method exists for police users to update their current coordinates; it rejects anonymous callers and non-police roles with clear traps.",
-        "Police locations are timestamped so the canister can ignore stale police locations when selecting nearest recipients (define and apply a reasonable staleness cutoff in code).",
-        "The new method does not require any external services or databases; all data is stored in canister memory like existing maps."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "notify only the nearest 2 police also change the radius to 20 meters bro"
-        ]
-      },
-      "acceptanceCriteria": [
-        "`frontend/src/hooks/useQueries.ts` includes a new React Query mutation hook for the new backend police-location update method.",
-        "`frontend/src/pages/PoliceInterface.tsx` calls the police-location update mutation on an interval (and on initial location acquisition), similar to the ambulance location update behavior.",
-        "PoliceInterface continues to render SOS alerts from `useGetActiveSOSAlerts()` without client-side assumptions that all police see all alerts (i.e., no extra filtering needed beyond what backend returns)."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "change the radius to 20 meters"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In `frontend/src/pages/AmbulanceInterface.tsx`, replace the active SOS status text \"SOS Alert Active - All nearby police units have been notified\" with wording that states \"nearest 2 police\" and \"within 20 meters\".",
-        "In `frontend/src/pages/AmbulanceInterface.tsx` instructions, replace the line \"Police units within 1 km will receive immediate notification\" with \"Nearest 2 police units within 20 meters will receive immediate notification\" (or equivalent clear English).",
-        "Any other Ambulance UI copy implying broadcast-to-all is updated to match the new behavior."
+        "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
+        "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
+        "Behaviorally, a police unit at ~25m can be selected/targeted, while one at ~35m is not (assuming both have recent locations)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if an upgrade-safe state migration is required.",
-    "Do not edit frontend files under frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or any files in frontend/src/components/ui (compose them instead).",
-    "Use English for all user-facing text."
+    "Do not edit files under frontend/src/components/ui or any other paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing real-time push delivery (WebSockets/push notifications).",
-    "Integrating third-party maps/GPS services beyond the existing browser geolocation and outbound Google Maps directions links.",
-    "Adding non-Internet-Identity authentication providers."
+    "Do not change the general police monitoring radius used for listing nearby ambulances (e.g., the 1.0km RADIUS_KM setting) unless required for the SOS radius change.",
+    "Do not change SOS duration or the number of police units targeted (keep nearest 2)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

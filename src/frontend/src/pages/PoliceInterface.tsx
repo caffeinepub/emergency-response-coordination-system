@@ -9,7 +9,7 @@ import type { Coordinates, AmbulanceLocation, SOSAlert } from '../backend';
 
 const RADIUS_KM = 1.0;
 const LOCATION_TIMEOUT_SECONDS = 15; // Consider ambulance offline if no update in 15 seconds
-const POLICE_LOCATION_UPDATE_INTERVAL = 3000; // 3 seconds
+const POLICE_LOCATION_UPDATE_INTERVAL = 12000; // 12 seconds
 
 export default function PoliceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -105,7 +105,7 @@ export default function PoliceInterface() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // Send police location updates to backend every 3 seconds
+  // Send police location updates to backend every 12 seconds
   useEffect(() => {
     if (!location) return;
 
@@ -211,7 +211,7 @@ export default function PoliceInterface() {
                       <p>Longitude: {location.longitude.toFixed(6)}</p>
                       <Badge variant="outline" className="mt-2 gap-1">
                         <Radio className="h-3 w-3 animate-pulse text-emergency-blue" />
-                        Monitoring {RADIUS_KM}km radius • Live updates every 3s
+                        Monitoring {RADIUS_KM}km radius • Live updates every 12s
                       </Badge>
                     </div>
                   ) : (
@@ -224,47 +224,35 @@ export default function PoliceInterface() {
               </div>
             </div>
 
-            {/* Active SOS Alerts */}
+            {/* SOS Alerts */}
             {sosAlerts.length > 0 && (
               <div className="space-y-3">
-                <h3 className="flex items-center gap-2 font-semibold text-destructive">
-                  <AlertCircle className="h-5 w-5 animate-pulse" />
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <img src="/assets/generated/alert-icon.dim_48x48.png" alt="" className="h-6 w-6" />
                   Active SOS Alerts ({sosAlerts.length})
                 </h3>
                 {sosAlerts.map((alert) => {
                   const distance = location ? calculateDistance(location, alert.coordinates) : null;
-                  const timestamp = new Date(Number(alert.timestamp) / 1000000);
-                  
                   return (
-                    <Alert key={alert.ambulanceId.toString()} className="border-destructive bg-destructive/10 animate-pulse">
-                      <img src="/assets/generated/alert-icon.dim_48x48.png" alt="" className="h-6 w-6" />
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <AlertTitle className="text-destructive font-bold">🚨 EMERGENCY ALERT</AlertTitle>
-                          <AlertDescription className="space-y-1">
-                            <p className="font-mono text-xs">Ambulance ID: {alert.ambulanceId.toString().slice(0, 20)}...</p>
-                            <p className="text-xs">
-                              Location: {alert.coordinates.latitude.toFixed(6)}, {alert.coordinates.longitude.toFixed(6)}
-                            </p>
-                            <p className="text-xs">
-                              Time: {timestamp.toLocaleTimeString()}
-                            </p>
-                            {distance !== null && (
-                              <p className="text-xs font-bold text-destructive">
-                                Distance: {formatDistance(distance)}
-                              </p>
-                            )}
-                          </AlertDescription>
-                        </div>
-                        <Button
-                          onClick={() => handleGetDirections(alert.coordinates)}
-                          variant="destructive"
-                          size="sm"
-                          className="w-full gap-2 font-semibold sm:w-auto"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Get Directions
-                        </Button>
+                    <Alert key={alert.ambulanceId.toString()} className="border-destructive bg-destructive/10">
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                      <div className="flex-1">
+                        <AlertTitle className="text-destructive">Emergency Alert</AlertTitle>
+                        <AlertDescription className="space-y-2">
+                          <div className="text-sm">
+                            <p className="font-medium">Ambulance ID: {alert.ambulanceId.toString().slice(0, 8)}...</p>
+                            <p>Location: {alert.coordinates.latitude.toFixed(6)}, {alert.coordinates.longitude.toFixed(6)}</p>
+                            {distance !== null && <p>Distance: {formatDistance(distance)}</p>}
+                          </div>
+                          <Button
+                            onClick={() => handleGetDirections(alert.coordinates)}
+                            size="sm"
+                            className="bg-emergency-blue hover:bg-emergency-blue/90"
+                          >
+                            <Navigation className="mr-2 h-4 w-4" />
+                            Get Directions
+                          </Button>
+                        </AlertDescription>
                       </div>
                     </Alert>
                   );
@@ -272,89 +260,69 @@ export default function PoliceInterface() {
               </div>
             )}
 
-            {/* Real-time Ambulance Map */}
+            {/* Ambulance List */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="flex items-center gap-2 font-semibold">
-                  <Navigation className="h-5 w-5 text-emergency-blue" />
-                  Live Ambulance Tracking
-                </h3>
-                <Badge variant="secondary">
-                  {ambulances.length} within {RADIUS_KM}km
-                </Badge>
-              </div>
+              <h3 className="flex items-center gap-2 font-semibold">
+                <img src="/assets/generated/ambulance-marker.dim_32x32.png" alt="" className="h-6 w-6" />
+                Nearby Ambulances ({ambulances.length})
+              </h3>
 
-              {ambulancesLoading ? (
-                <div className="flex items-center justify-center py-12">
+              {ambulancesLoading && !location ? (
+                <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : ambulances.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center">
-                  <MapPin className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                  <p className="mt-2 text-sm text-muted-foreground">No ambulances in range</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Waiting for ambulances to share their location...</p>
+                <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No ambulances detected within {RADIUS_KM}km radius
+                  </p>
                 </div>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2">
                   {ambulances.map((ambulance) => {
-                    const hasAlert = isSOSActive(ambulance.ambulanceId.toString());
-                    const distance = location ? calculateDistance(location, ambulance.coordinates) : 0;
+                    const distance = location ? calculateDistance(location, ambulance.coordinates) : null;
                     const timestamp = new Date(Number(ambulance.timestamp) / 1000000);
                     const secondsAgo = Math.floor((Date.now() - timestamp.getTime()) / 1000);
+                    const hasSOSAlert = isSOSActive(ambulance.ambulanceId.toString());
 
                     return (
                       <Card
                         key={ambulance.ambulanceId.toString()}
-                        className={`transition-all ${
-                          hasAlert
-                            ? 'border-2 border-destructive bg-destructive/5 shadow-lg shadow-destructive/30 animate-pulse'
-                            : 'hover:shadow-md'
-                        }`}
+                        className={hasSOSAlert ? 'border-destructive bg-destructive/5' : ''}
                       >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between gap-2">
+                        <CardContent className="flex items-center justify-between p-4">
+                          <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
-                              <img
-                                src="/assets/generated/ambulance-marker.dim_32x32.png"
-                                alt=""
-                                className={`h-8 w-8 ${hasAlert ? 'brightness-0 saturate-100 hue-rotate-[350deg]' : ''}`}
-                                style={hasAlert ? { filter: 'brightness(0) saturate(100%) invert(27%) sepia(98%) saturate(7426%) hue-rotate(357deg) brightness(95%) contrast(118%)' } : {}}
-                              />
-                              <CardTitle className="text-sm">Ambulance</CardTitle>
+                              <p className="font-medium">
+                                Ambulance {ambulance.ambulanceId.toString().slice(0, 8)}...
+                              </p>
+                              {hasSOSAlert && (
+                                <Badge variant="destructive" className="gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  SOS ACTIVE
+                                </Badge>
+                              )}
                             </div>
-                            {hasAlert && (
-                              <Badge variant="destructive" className="animate-pulse">
-                                SOS
-                              </Badge>
-                            )}
+                            <div className="text-sm text-muted-foreground">
+                              <p>
+                                {ambulance.coordinates.latitude.toFixed(6)}, {ambulance.coordinates.longitude.toFixed(6)}
+                              </p>
+                              {distance !== null && (
+                                <p className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {formatDistance(distance)} away • Updated {secondsAgo}s ago
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-xs">
-                          <div className="space-y-1">
-                            <p className="font-mono text-muted-foreground">
-                              ID: {ambulance.ambulanceId.toString().slice(0, 12)}...
-                            </p>
-                            <p className="text-muted-foreground">
-                              Distance: <span className="font-semibold text-foreground">{formatDistance(distance)}</span>
-                            </p>
-                            <p className="text-muted-foreground">
-                              Updated: <span className="font-semibold text-foreground">{secondsAgo}s ago</span>
-                            </p>
-                          </div>
-                          {hasAlert && (
-                            <Button
-                              onClick={() => {
-                                const alert = getSOSAlert(ambulance.ambulanceId.toString());
-                                if (alert) handleGetDirections(alert.coordinates);
-                              }}
-                              variant="destructive"
-                              size="sm"
-                              className="w-full gap-1 text-xs"
-                            >
-                              <Navigation className="h-3 w-3" />
-                              Navigate
-                            </Button>
-                          )}
+                          <Button
+                            onClick={() => handleGetDirections(ambulance.coordinates)}
+                            size="sm"
+                            variant={hasSOSAlert ? 'destructive' : 'outline'}
+                          >
+                            <Navigation className="mr-2 h-4 w-4" />
+                            Navigate
+                          </Button>
                         </CardContent>
                       </Card>
                     );

@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import type { Coordinates } from '../backend';
 
 const SOS_DURATION = 60000; // 60 seconds
-const LOCATION_UPDATE_INTERVAL = 3000; // 3 seconds
+const LOCATION_UPDATE_INTERVAL = 12000; // 12 seconds
 
 export default function AmbulanceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -52,7 +52,7 @@ export default function AmbulanceInterface() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // Send location updates to backend every 3 seconds
+  // Send location updates to backend every 12 seconds
   useEffect(() => {
     if (!location) return;
 
@@ -208,7 +208,7 @@ export default function AmbulanceInterface() {
                 <Alert className="border-destructive bg-destructive/10">
                   <AlertCircle className="h-4 w-4 text-destructive" />
                   <AlertDescription className="font-semibold text-destructive">
-                    SOS Alert Active - Nearest 2 police units within 20 meters have been notified
+                    SOS Alert Active - Nearest 2 police units within 30 meters have been notified
                   </AlertDescription>
                 </Alert>
               )}
@@ -226,7 +226,7 @@ export default function AmbulanceInterface() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
-                  Your GPS location is continuously tracked and shared with police units every 3 seconds
+                  Your GPS location is continuously tracked and shared with police units every 12 seconds
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
@@ -238,7 +238,7 @@ export default function AmbulanceInterface() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
-                  Nearest 2 police units within 20 meters will receive immediate notification
+                  Nearest 2 police units within 30 meters will receive immediate notification
                 </li>
               </ul>
             </div>

@@ -1,45 +1,33 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-07T11:17:56.944Z",
+  "generatedAt": "2026-02-09T02:45:41.643Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
+    "total": 2,
     "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement SOS targeting so that when an ambulance triggers SOS, the backend selects and records only the nearest 2 police users within a 20 meter radius (0.02 km), and only those police users can retrieve/see that active SOS alert via SOS alert queries.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Add backend APIs to allow police users to continuously update their own location (similar to ambulance location updates), and ensure these locations are used for SOS nearest-police selection.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
+        "summary": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/PoliceInterface.tsx"
+          "frontend/src/pages/AmbulanceInterface.tsx",
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/PoliceInterface.tsx"
+          "frontend/src/pages/AmbulanceInterface.tsx",
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-4",
-        "summary": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
+        "id": "REQ-2",
+        "summary": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/AmbulanceInterface.tsx"
@@ -52,15 +40,10 @@
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AmbulanceInterface.tsx",
     "frontend/src/pages/PoliceInterface.tsx",

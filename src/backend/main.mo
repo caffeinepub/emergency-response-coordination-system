@@ -9,11 +9,9 @@ import Float "mo:core/Float";
 import List "mo:core/List";
 import Int "mo:core/Int";
 
-import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-(with migration = Migration.run)
 actor {
   type Coordinates = {
     latitude : Float;
@@ -250,11 +248,11 @@ actor {
     };
 
     let allPolice = policeLocations.toArray();
+    let radius = 0.03; // 30 meters (0.03 km)
 
-    // First filter police within 20m (0.02 km) radius
     let policeWithinRadius = allPolice.filter(
       func((_, location)) {
-        calculateDistance(coordinates, location.coordinates) <= 0.02;
+        calculateDistance(coordinates, location.coordinates) <= radius;
       }
     );
 
@@ -274,7 +272,6 @@ actor {
       )
     );
 
-    // Take only the nearest 2 police within the radius
     let filteredList = sortedList.toArray().sliceToArray(0, Int.min(2, sortedList.size().toInt()));
     let targetPolice = filteredList.map(
       func((id, _, _)) { id }

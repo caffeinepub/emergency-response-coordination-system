@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-frontend-so-police-clients-send-periodic-police-location-updates-to-the-backend-while-the-police-interface-is-open-and-ensure-the-police-sos-alerts-view-only-reflects-targeted-alerts-returned-by-the-backend",
-      "featureTitle": "Update the frontend so Police clients send periodic police location updates to the backend while the Police interface is open, and ensure the Police SOS alerts view only reflects targeted alerts returned by the backend.",
+      "featureId": "feature-change-the-coordinate-refresh-update-interval-to-12-seconds-wherever-the-app-periodically-sends-or-refreshes-location-coordinates-ambulance-and-police-location-updates-and-police-side-polling-of-nearby-ambulance-locations-update-any-user-facing-text-that-mentions-the-old-interval-so-it-matches-12-seconds",
+      "featureTitle": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
       "files": [
         "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AmbulanceInterface.tsx",
         "frontend/src/pages/PoliceInterface.tsx"
       ],
       "components": [
@@ -17,13 +18,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-user-facing-copy-in-the-ambulance-interface-to-reflect-sos-targeting-to-the-nearest-2-police-within-20-meters-replacing-existing-statements-that-imply-broadcasting-to-all-police-or-using-a-1-km-radius",
-      "featureTitle": "Update user-facing copy in the Ambulance interface to reflect SOS targeting to the nearest 2 police within 20 meters, replacing existing statements that imply broadcasting to all police or using a 1 km radius.",
+      "featureId": "feature-change-the-sos-targeting-radius-from-20-meters-to-30-meters-update-backend-sos-targeting-logic-to-use-30-meters-when-selecting-police-units-and-update-ambulance-ui-copy-that-references-the-radius-so-it-says-30-meters",
+      "featureTitle": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
       "files": [
         "frontend/src/pages/AmbulanceInterface.tsx"
       ],
@@ -36,7 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-4"
+        "REQ-2"
       ],
       "confidence": "high"
     }

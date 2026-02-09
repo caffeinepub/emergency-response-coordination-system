@@ -92,8 +92,8 @@ export function useGetLocationsInRadius(center: Coordinates | null, radius: numb
       return actor.getLocationsInRadius(center, radius);
     },
     enabled: !!actor && !actorFetching && !!center,
-    refetchInterval: 3000, // Poll every 3 seconds for live updates
-    staleTime: 2000, // Consider data stale after 2 seconds
+    refetchInterval: 12000, // Poll every 12 seconds for live updates
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 }
 
