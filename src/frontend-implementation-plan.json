@@ -1,48 +1,84 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Adjust location update cadence to 12s and SOS radius copy to 30m (frontend)",
+  "title": "12s coordinate refresh, 30m police radius, and Police Interface stability fixes",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update all periodic location update/poll intervals to 12 seconds and align any UI text that mentions the update frequency.",
+      "summary": "Standardize continuous coordinate update/polling intervals to 12 seconds with immediate initial updates.",
       "acceptanceCriteria": [
-        "Ambulance location updates are sent to the backend every 12 seconds (not 3).",
-        "Police location updates are sent to the backend every 12 seconds (not 3).",
-        "Police-side polling for nearby ambulance locations runs every 12 seconds (not 3).",
-        "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions)."
+        "Ambulance interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
+        "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
+        "Polling for nearby ambulances/locations (React Query refetchInterval) runs every 12 seconds.",
+        "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling)."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/utils/locationRefresh.ts",
+          "operation": "create",
+          "description": "Add shared constants/utilities for coordinate refresh timing (12s) to avoid divergent intervals across ambulance updates, police updates, and nearby polling."
+        },
+        {
           "path": "frontend/src/pages/AmbulanceInterface.tsx",
           "operation": "modify",
-          "description": "Change the ambulance location sending interval constant from 3s to 12s (e.g., LOCATION_UPDATE_INTERVAL = 12000) and ensure any inline comments/UI copy that explicitly mentions the old 3-second cadence is updated to match 12 seconds. Verify the component's usage instructions before implementing."
+          "description": "Replace local location update interval constant with the shared 12s refresh constant; keep the immediate initial update behavior and ensure displayed text reflects 12 seconds."
         },
         {
           "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Change police location sending interval from 3s to 12s (e.g., POLICE_LOCATION_UPDATE_INTERVAL = 12000) and update any visible UI copy (e.g., the monitoring badge text) that mentions live updates every 3s so it reflects 12s. Verify the component's usage instructions before implementing."
+          "description": "Replace local police location update interval constant with the shared 12s refresh constant; keep the immediate initial update behavior and ensure any user-facing text reflects 12 seconds."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update the React Query polling interval used for police-side refreshing of nearby ambulance locations to 12 seconds (refetchInterval for useGetLocationsInRadius). Keep unrelated radii (e.g., RADIUS_KM=1.0) unchanged. Verify the component's usage instructions before implementing."
+          "description": "Replace hardcoded nearby-location polling interval with the shared 12s refresh constant; confirm this change only affects coordinate refresh polling (leave SOS alert polling frequency unchanged)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Update SOS targeting radius references in the ambulance UI from 20m to 30m (frontend copy changes only in this plan).",
+      "summary": "Set police nearby-ambulance detection radius to 30m (0.03 km) and display radius text as “30m”, using meters for sub‑1km values.",
       "acceptanceCriteria": [
-        "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
-        "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
-        "Behaviorally, a police unit at ~25m can be selected/targeted, while one at ~35m is not (assuming both have recent locations)."
+        "Police interface queries nearby ambulances using a radius of 0.03 km (30 meters).",
+        "The Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
+        "Any distance/radius formatting in the Police interface shows meters for sub‑1km values, including the configured radius."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/AmbulanceInterface.tsx",
+          "path": "frontend/src/utils/locationRefresh.ts",
           "operation": "modify",
-          "description": "Update ambulance-side SOS UI copy to reference 30 meters instead of 20 meters (e.g., the active SOS alert text and the relevant \"How it works\" bullet). Do not change SOS duration or the number of police units referenced (keep nearest 2). Verify the component's usage instructions before implementing."
+          "description": "Add/adjust shared police radius constant to 0.03 km (30 meters) and (optionally) a helper to format radius text as meters for sub‑1km values."
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Update the nearby-ambulance radius used by the police query to 0.03 km and update UI strings to show “30m” (status badge + empty state); ensure any radius formatting uses meters for sub‑1km values, including the configured radius."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Fix Police Interface runtime issues and improve loading/error feedback, including graceful SOS alert sound failures.",
+      "acceptanceCriteria": [
+        "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
+        "The Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
+        "If SOS alert sound cannot be initialized/played (browser restrictions), the Police interface continues to function and fails gracefully (no crash)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Harden audio initialization/playback with try/catch and safe guards (e.g., handle missing/blocked AudioContext, suspended contexts, and oscillator creation failures) so SOS alert sound issues never crash the UI; optionally show non-blocking UI feedback when sound is unavailable."
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Fix Nearby Ambulances loading/empty/error rendering conditions (e.g., show loading when the radius query is fetching and location is available; show a clear message when location is unavailable/denied) to prevent stuck or misleading states; ensure no console errors when geolocation permission is denied."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Ensure the nearby-locations React Query hook exposes accurate fetch/loading behavior for the Police interface (while keeping existing SOS alert polling unchanged), so the UI can reliably render loading/error feedback."
         }
       ]
     }

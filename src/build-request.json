@@ -1,52 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Update coordinate refresh interval to 12s and SOS radius to 30m",
+  "title": "Adjust coordinate refresh to 12s, set radius to 30m, and fix Police Interface bug",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
+      "text": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "Bro change the refresh change time of the coordinates to 12 seconds and also change the radius to 30 meters"
+          "Bro change the refresh change time of the coordinates to 12 seconds"
         ]
       },
       "acceptanceCriteria": [
-        "Ambulance location updates are sent to the backend every 12 seconds (not 3).",
-        "Police location updates are sent to the backend every 12 seconds (not 3).",
-        "Police-side polling for nearby ambulance locations runs every 12 seconds (not 3).",
-        "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions)."
+        "Ambulance interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
+        "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
+        "Polling for nearby ambulances/locations (React Query refetchInterval) runs every 12 seconds.",
+        "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
-      "target": "both",
+      "text": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-10"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "Bro change the refresh change time of the coordinates to 12 seconds and also change the radius to 30 meters"
+          "and also change the radius to 30 meters"
         ]
       },
       "acceptanceCriteria": [
-        "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
-        "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
-        "Behaviorally, a police unit at ~25m can be selected/targeted, while one at ~35m is not (assuming both have recent locations)."
+        "Police interface queries nearby ambulances using a radius of 0.03 km (30 meters).",
+        "The Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
+        "Any distance/radius formatting in the Police interface shows meters for sub‑1km values, including the configured radius."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages:user-1"
+        ],
+        "quotes": [
+          "also there seems a bug in police interface bro check that too bro"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
+        "The Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
+        "If SOS alert sound cannot be initialized/played (browser restrictions), the Police interface continues to function and fails gracefully (no crash)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui or any other paths listed as immutable in SYSTEM_CONTEXT."
+    "Do not edit files under frontend/immutablePaths (compose existing UI components instead).",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add migration code if state layout changes (not expected for these changes)."
   ],
   "nonGoals": [
-    "Do not change the general police monitoring radius used for listing nearby ambulances (e.g., the 1.0km RADIUS_KM setting) unless required for the SOS radius change.",
-    "Do not change SOS duration or the number of police units targeted (keep nearest 2)."
+    "Do not change SOS alert polling frequency unless it is directly required to fix the Police interface bug.",
+    "Do not introduce new authentication methods beyond Internet Identity.",
+    "Do not add external databases or third-party real-time systems (e.g., WebSockets)."
   ],
   "imageRequirements": {
     "required": [],

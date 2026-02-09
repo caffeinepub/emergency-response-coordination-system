@@ -1,68 +1,76 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:45:41.641Z",
-  "summary": "Frontend changes show updates toward a 12s refresh interval (React Query polling set to 12s; ambulance location update interval constant set to 12s; police interface constant set to 12s). However, the diff summary is truncated and does not provide clear evidence that (a) police location updates are actually sent on a 12s timer, (b) all UI copy mentioning the old interval was updated, or (c) backend SOS targeting radius logic was changed to 30m (0.03 km). There are also unrelated changes to profile-save error handling not requested.",
+  "generatedAt": "2026-02-09T03:09:07.163Z",
+  "summary": "Diff introduces shared constants/utilities for 12s location refresh and 30m police radius, updates React Query polling for nearby locations to 12s, updates AmbulanceInterface to send immediate + 12s periodic location updates, and adds PoliceInterface audio initialization/play error handling. Some PoliceInterface interval + UI text/loading-state changes are not verifiable from the truncated diff; additionally, unrelated profile-save error handling/refetch logic appears added without being requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Police location updates are sent to the backend every 12 seconds (not 3).",
-      "reason": "PoliceInterface.tsx shows a 12-second constant, but the truncated diff does not show the interval/timer code that actually calls useUpdatePoliceLocation on that cadence.",
+      "requirement": "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
+      "reason": "PoliceInterface.tsx shows a timer ref and imports LOCATION_UPDATE_INTERVAL, but the diff excerpt does not show any effect that performs an immediate update and then sets an interval to call useUpdatePoliceLocation every 12 seconds.",
       "evidence": [
         "frontend/src/pages/PoliceInterface.tsx (truncated)"
       ]
     },
     {
       "id": "REQ-1",
-      "requirement": "Any UI copy that states the update frequency reflects 12 seconds (e.g., badges/instructions).",
-      "reason": "The diff summary does not include the relevant UI copy text, so there is no direct evidence that user-facing text mentioning the old interval was updated everywhere it appears.",
+      "requirement": "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling).",
+      "reason": "The diff summary is truncated and only shows some updated intervals (e.g., 12s refetchInterval and ambulance 12s setInterval). It does not provide enough visibility to confirm no other location refresh/polling timers elsewhere still use a different interval.",
       "evidence": [
+        "frontend/src/hooks/useQueries.ts (truncated)",
         "frontend/src/pages/AmbulanceInterface.tsx (truncated)",
+        "frontend/src/pages/PoliceInterface.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
+      "reason": "Constants/utilities for formatting 30m exist, but the truncated PoliceInterface.tsx excerpt does not show the actual rendered badge/empty-state strings being updated to '30m'.",
+      "evidence": [
         "frontend/src/pages/PoliceInterface.tsx (truncated)",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "frontend/src/utils/locationRefresh.ts"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Backend SOS targeting filters police within 30 meters (0.03 km) instead of 20 meters (0.02 km).",
-      "reason": "backend/main.mo is truncated and the SOS targeting selection/radius constant/change is not visible in the provided excerpt, so the backend radius change to 0.03 km cannot be verified from the diff summary.",
+      "id": "REQ-3",
+      "requirement": "Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
+      "reason": "PoliceInterface.tsx shows it now reads isLoading/isFetching from useGetLocationsInRadius, but the diff excerpt is truncated before any JSX rendering, so the loading/empty-state conditional logic cannot be verified.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "frontend/src/pages/PoliceInterface.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Ambulance UI SOS status text and \"How it works\" bullet(s) reference 30 meters (not 20).",
-      "reason": "The diff summary does not show the SOS explanatory/status copy content; the file summary claims it is updated, but there is no direct textual evidence in the truncated snippet.",
+      "id": "REQ-3",
+      "requirement": "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
+      "reason": "The diff excerpt does not show the geolocation permission-denied handling/render-path changes (e.g., fallback UI, guarding queries when location is null) in PoliceInterface; it only shows state variables and some logic unrelated to permission denial handling.",
       "evidence": [
-        "frontend/src/pages/AmbulanceInterface.tsx (truncated)",
-        "frontend-file-summaries.txt"
+        "frontend/src/pages/PoliceInterface.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Enhanced error handling and user messaging for saveCallerUserProfile (trap/unauthorized parsing, retry-friendly messaging) beyond the requested interval/radius changes.",
-      "reason": "BuildRequest only asks to change refresh interval to 12s and SOS radius to 30m; profile-save mutation behavior changes are not requested.",
+      "description": "Additional error-message mapping and forced invalidate+refetch behavior for saving caller user profile.",
+      "reason": "REQ-1/REQ-2/REQ-3 are about location refresh intervals, police radius display/querying, and PoliceInterface runtime/loading/audio robustness. The diff adds new logic for profile saving error handling and immediate refetch that is not requested.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "frontend/src/hooks/useQueries.ts"
       ]
     },
     {
-      "description": "Changed React Query caching behavior for getLocationsInRadius (staleTime=10000) in addition to changing the polling interval.",
-      "reason": "Only the polling/refresh interval was requested; staleTime adjustments were not mentioned.",
+      "description": "Police radius constant imported/used in AmbulanceInterface (POLICE_RADIUS_KM) implying radius-related behavior changes outside the police interface.",
+      "reason": "REQ-2 is explicitly police-side radius for detecting/displaying nearby ambulances; the diff shows AmbulanceInterface importing POLICE_RADIUS_KM and formatRadius, which suggests radius handling may have been extended beyond what was requested.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "frontend/src/pages/AmbulanceInterface.tsx (truncated)"
       ]
     }
   ],
-  "confidence": 0.56,
+  "confidence": 0.62,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AmbulanceInterface.tsx",
     "frontend/src/pages/PoliceInterface.tsx",
+    "frontend/src/utils/locationRefresh.ts",
     "project_state.json"
   ]
 }

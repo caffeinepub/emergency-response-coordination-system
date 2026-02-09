@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { AlertCircle, MapPin, Loader2, CheckCircle, Navigation } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import RealtimeMap, { MapMarker } from '../components/RealtimeMap';
 import type { Coordinates } from '../backend';
+import { LOCATION_UPDATE_INTERVAL, POLICE_RADIUS_KM, formatRadius } from '../utils/locationRefresh';
 
 const SOS_DURATION = 60000; // 60 seconds
-const LOCATION_UPDATE_INTERVAL = 12000; // 12 seconds
 
 export default function AmbulanceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -130,9 +131,22 @@ export default function AmbulanceInterface() {
     }
   };
 
+  // Prepare map markers
+  const mapMarkers: MapMarker[] = location
+    ? [
+        {
+          id: 'ambulance',
+          lat: location.latitude,
+          lng: location.longitude,
+          type: 'ambulance',
+          label: 'Your Location (Ambulance)',
+        },
+      ]
+    : [];
+
   return (
     <div className="container mx-auto min-h-[calc(100vh-8rem)] px-4 py-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -142,6 +156,19 @@ export default function AmbulanceInterface() {
             <CardDescription>Emergency SOS and continuous location sharing</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Real-time Map */}
+            {location && !locationError && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Live Location Map</h3>
+                <RealtimeMap
+                  center={{ lat: location.latitude, lng: location.longitude }}
+                  markers={mapMarkers}
+                  zoom={16}
+                  className="h-[400px]"
+                />
+              </div>
+            )}
+
             {/* Location Status */}
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <div className="flex items-start gap-3">
@@ -208,7 +235,7 @@ export default function AmbulanceInterface() {
                 <Alert className="border-destructive bg-destructive/10">
                   <AlertCircle className="h-4 w-4 text-destructive" />
                   <AlertDescription className="font-semibold text-destructive">
-                    SOS Alert Active - Nearest 2 police units within 30 meters have been notified
+                    SOS Alert Active - Nearest 2 police units within {formatRadius(POLICE_RADIUS_KM)} have been notified
                   </AlertDescription>
                 </Alert>
               )}
@@ -226,7 +253,7 @@ export default function AmbulanceInterface() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
-                  Your GPS location is continuously tracked and shared with police units every 12 seconds
+                  Your GPS location is continuously tracked and shared with police units every {LOCATION_UPDATE_INTERVAL / 1000} seconds
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
@@ -238,7 +265,7 @@ export default function AmbulanceInterface() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
-                  Nearest 2 police units within 30 meters will receive immediate notification
+                  Nearest 2 police units within {formatRadius(POLICE_RADIUS_KM)} will receive immediate notification
                 </li>
               </ul>
             </div>

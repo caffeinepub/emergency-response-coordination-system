@@ -2,12 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-change-the-coordinate-refresh-update-interval-to-12-seconds-wherever-the-app-periodically-sends-or-refreshes-location-coordinates-ambulance-and-police-location-updates-and-police-side-polling-of-nearby-ambulance-locations-update-any-user-facing-text-that-mentions-the-old-interval-so-it-matches-12-seconds",
-      "featureTitle": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
+      "featureId": "feature-set-the-coordinate-refresh-update-interval-to-12-seconds-across-the-app-wherever-continuous-location-updates-or-location-polling-is-performed-ambulance-location-updates-police-location-updates-and-polling-for-nearby-locations",
+      "featureTitle": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
       "files": [
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/AmbulanceInterface.tsx",
-        "frontend/src/pages/PoliceInterface.tsx"
+        "frontend/src/pages/PoliceInterface.tsx",
+        "frontend/src/utils/locationRefresh.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -23,10 +24,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-change-the-sos-targeting-radius-from-20-meters-to-30-meters-update-backend-sos-targeting-logic-to-use-30-meters-when-selecting-police-units-and-update-ambulance-ui-copy-that-references-the-radius-so-it-says-30-meters",
-      "featureTitle": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
+      "featureId": "feature-change-the-police-side-radius-used-for-detecting-displaying-nearby-ambulances-from-the-current-value-to-30-meters-0-03-km-and-update-any-user-facing-radius-text-to-display-as-30m-not-0-03km-or-0-03-km",
+      "featureTitle": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
       "files": [
-        "frontend/src/pages/AmbulanceInterface.tsx"
+        "frontend/src/pages/PoliceInterface.tsx",
+        "frontend/src/utils/locationRefresh.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,6 +40,26 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-investigate-and-fix-the-reported-police-interface-bug-by-identifying-the-user-visible-failure-mode-and-applying-a-code-fix-so-the-police-interface-operates-without-runtime-errors-and-provides-correct-loading-error-feedback",
+      "featureTitle": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/PoliceInterface.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

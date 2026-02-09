@@ -1,25 +1,27 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T02:45:41.643Z",
+  "generatedAt": "2026-02-09T03:09:07.166Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
+        "summary": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
         "status": "implemented",
         "plannedFiles": [
+          "frontend/src/utils/locationRefresh.ts",
           "frontend/src/pages/AmbulanceInterface.tsx",
           "frontend/src/pages/PoliceInterface.tsx",
           "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
+          "frontend/src/utils/locationRefresh.ts",
           "frontend/src/pages/AmbulanceInterface.tsx",
           "frontend/src/pages/PoliceInterface.tsx",
           "frontend/src/hooks/useQueries.ts"
@@ -27,19 +29,35 @@
       },
       {
         "id": "REQ-2",
-        "summary": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
+        "summary": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/AmbulanceInterface.tsx"
+          "frontend/src/utils/locationRefresh.ts",
+          "frontend/src/pages/PoliceInterface.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/AmbulanceInterface.tsx"
+          "frontend/src/utils/locationRefresh.ts",
+          "frontend/src/pages/PoliceInterface.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/pages/PoliceInterface.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
@@ -47,6 +65,7 @@
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/AmbulanceInterface.tsx",
     "frontend/src/pages/PoliceInterface.tsx",
+    "frontend/src/utils/locationRefresh.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

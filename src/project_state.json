@@ -1,24 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project includes SOS behavior with periodic coordinate refresh and radius-based logic; adjust refresh interval and radius parameters.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Bug reported in police interface (details TBD)"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-change-the-coordinate-refresh-update-interval-to-12-seconds-wherever-the-app-periodically-sends-or-refreshes-location-coordinates-ambulance-and-police-location-updates-and-police-side-polling-of-nearby-ambulance-locations-update-any-user-facing-text-that-mentions-the-old-interval-so-it-matches-12-seconds",
-      "title": "Change the coordinate refresh/update interval to 12 seconds wherever the app periodically sends or refreshes location coordinates (ambulance and police location updates, and police-side polling of nearby ambulance locations). Update any user-facing text that mentions the old interval so it matches 12 seconds.",
+      "id": "feature-set-the-coordinate-refresh-update-interval-to-12-seconds-across-the-app-wherever-continuous-location-updates-or-location-polling-is-performed-ambulance-location-updates-police-location-updates-and-polling-for-nearby-locations",
+      "title": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-change-the-sos-targeting-radius-from-20-meters-to-30-meters-update-backend-sos-targeting-logic-to-use-30-meters-when-selecting-police-units-and-update-ambulance-ui-copy-that-references-the-radius-so-it-says-30-meters",
-      "title": "Change the SOS targeting radius from 20 meters to 30 meters. Update backend SOS targeting logic to use 30 meters when selecting police units, and update ambulance UI copy that references the radius so it says 30 meters.",
+      "id": "feature-change-the-police-side-radius-used-for-detecting-displaying-nearby-ambulances-from-the-current-value-to-30-meters-0-03-km-and-update-any-user-facing-radius-text-to-display-as-30m-not-0-03km-or-0-03-km",
+      "title": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-investigate-and-fix-the-reported-police-interface-bug-by-identifying-the-user-visible-failure-mode-and-applying-a-code-fix-so-the-police-interface-operates-without-runtime-errors-and-provides-correct-loading-error-feedback",
+      "title": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -26,12 +36,24 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Change coordinate refresh interval to 12 seconds and set radius to 30 meters",
+      "summary": "Change coordinate refresh interval to 12 seconds",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Change radius to 30 meters",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Investigate and fix bug in police interface",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Update coordinate refresh interval to 12s and SOS radius to 30m",
+  "projectName": "Adjust coordinate refresh to 12s, set radius to 30m, and fix Police Interface bug",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

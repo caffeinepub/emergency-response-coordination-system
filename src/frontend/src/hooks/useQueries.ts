@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
 import type { UserProfile, Coordinates, AmbulanceLocation, SOSAlert } from '../backend';
+import { LOCATION_UPDATE_INTERVAL } from '../utils/locationRefresh';
 
 // User Profile Queries
 export function useGetCallerUserProfile() {
@@ -92,7 +93,7 @@ export function useGetLocationsInRadius(center: Coordinates | null, radius: numb
       return actor.getLocationsInRadius(center, radius);
     },
     enabled: !!actor && !actorFetching && !!center,
-    refetchInterval: 12000, // Poll every 12 seconds for live updates
+    refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates
     staleTime: 10000, // Consider data stale after 10 seconds
   });
 }
