@@ -113,9 +113,14 @@ export interface AmbulanceLocation {
     timestamp: Time;
     coordinates: Coordinates;
 }
+export interface AmbulanceContact {
+    name: string;
+    phoneNumber: string;
+}
 export interface UserProfile {
     name: string;
     role: AppRole;
+    phoneNumber: string;
 }
 export enum AppRole {
     ambulance = "ambulance",
@@ -133,8 +138,10 @@ export interface backendInterface {
     deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
+    getAllAmbulanceContacts(): Promise<Array<AmbulanceContact>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
     getAllSOSAlerts(): Promise<Array<SOSAlert>>;
+    getAmbulanceContactsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceContact>>;
     getAmbulanceLocation(ambulanceId: AmbulanceId): Promise<AmbulanceLocation | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -239,6 +246,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getAllAmbulanceContacts(): Promise<Array<AmbulanceContact>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllAmbulanceContacts();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllAmbulanceContacts();
+            return result;
+        }
+    }
     async getAllLocations(): Promise<Array<AmbulanceLocation>> {
         if (this.processError) {
             try {
@@ -264,6 +285,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getAllSOSAlerts();
+            return result;
+        }
+    }
+    async getAmbulanceContactsInRadius(arg0: Coordinates, arg1: number): Promise<Array<AmbulanceContact>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAmbulanceContactsInRadius(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAmbulanceContactsInRadius(arg0, arg1);
             return result;
         }
     }
@@ -516,13 +551,16 @@ function from_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
 function from_candid_record_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     role: _AppRole;
+    phoneNumber: string;
 }): {
     name: string;
     role: AppRole;
+    phoneNumber: string;
 } {
     return {
         name: value.name,
-        role: from_candid_AppRole_n7(_uploadFile, _downloadFile, value.role)
+        role: from_candid_AppRole_n7(_uploadFile, _downloadFile, value.role),
+        phoneNumber: value.phoneNumber
     };
 }
 function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -553,13 +591,16 @@ function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint
 function to_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
     role: AppRole;
+    phoneNumber: string;
 }): {
     name: string;
     role: _AppRole;
+    phoneNumber: string;
 } {
     return {
         name: value.name,
-        role: to_candid_AppRole_n15(_uploadFile, _downloadFile, value.role)
+        role: to_candid_AppRole_n15(_uploadFile, _downloadFile, value.role),
+        phoneNumber: value.phoneNumber
     };
 }
 function to_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): {

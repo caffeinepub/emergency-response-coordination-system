@@ -1,85 +1,114 @@
 {
   "kind": "build_request",
-  "title": "Adjust coordinate refresh to 12s, set radius to 30m, and fix Police Interface bug",
+  "title": "Collect ambulance contact info (name + 10-digit phone) and show/call it from police radar",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
-      "target": "frontend",
+      "id": "REQ-4",
+      "text": "Extend the backend user profile model to store an ambulance user's phone number and enforce that it is exactly 10 digits (0-9 only) when saving a profile.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "msg-8"
         ],
         "quotes": [
-          "Bro change the refresh change time of the coordinates to 12 seconds"
+          "bro in the ambulance interface when the user logs in it should ask them their name and also their phone number which should be a 10 digit number only"
         ]
       },
       "acceptanceCriteria": [
-        "Ambulance interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
-        "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
-        "Polling for nearby ambulances/locations (React Query refetchInterval) runs every 12 seconds.",
-        "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling)."
+        "Backend `UserProfile` includes a `phoneNumber` (Text) field in addition to `name` and `role`.",
+        "`saveCallerUserProfile` rejects profiles whose `phoneNumber` is not exactly 10 characters long or contains any non-digit characters, returning a clear trap message (English).",
+        "Existing behavior remains: first-time profile creation can set role; subsequent saves can update name/phone but must not change role."
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
-      "target": "frontend",
+      "id": "REQ-5",
+      "text": "Add a backend query that allows police users to retrieve ambulance contact details (name + phone number) for ambulances returned in the police radar results.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "msg-8"
         ],
         "quotes": [
-          "and also change the radius to 30 meters"
+          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered"
         ]
       },
       "acceptanceCriteria": [
-        "Police interface queries nearby ambulances using a radius of 0.03 km (30 meters).",
-        "The Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
-        "Any distance/radius formatting in the Police interface shows meters for sub‑1km values, including the configured radius."
+        "There is a police-authorized backend query that returns ambulance locations in radius along with each ambulance's profile contact fields (at minimum: name and phoneNumber) for the same ambulanceId.",
+        "The query traps or returns an authorization error if called by non-police and non-admin users.",
+        "If an ambulance does not yet have a profile, the returned contact fields are absent/empty in a way that the frontend can handle safely (no crashes)."
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "id": "REQ-6",
+      "text": "Update the profile setup flow (shown immediately after login when no profile exists) to also collect the user's phone number, validating it as exactly 10 digits before allowing submission.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "msg-8"
         ],
         "quotes": [
-          "also there seems a bug in police interface bro check that too bro"
+          "when the user logs in it should ask them their name and also their phone number which should be a 10 digit number only"
         ]
       },
       "acceptanceCriteria": [
-        "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
-        "The Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
-        "If SOS alert sound cannot be initialized/played (browser restrictions), the Police interface continues to function and fails gracefully (no crash)."
+        "`ProfileSetup` displays a required phone number input in addition to the existing name and role fields.",
+        "The phone number field only accepts digits (UI-level filtering is allowed) and submission is blocked unless it is exactly 10 digits.",
+        "If validation fails, an English error message is shown to the user (e.g., \"Phone number must be exactly 10 digits\").",
+        "On successful save, the app transitions as it does today (App routes user into the correct interface)."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Update the Police interface radar list and map marker labels so that when an ambulance is visible, it shows: ambulance name, phone number, and current coordinates; and provide a \"Call\" button that initiates a direct phone call to that number.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-8"
+        ],
+        "quotes": [
+          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered and add a button so that when it is clicked the police can directly call them"
+        ]
+      },
+      "acceptanceCriteria": [
+        "For each nearby ambulance in the Police interface list, the UI displays: Name, Phone number, and Location (latitude/longitude), alongside the existing distance/last update information.",
+        "Each ambulance entry includes a visible \"Call\" button that uses a `tel:` link to dial the displayed phone number.",
+        "If a phone number is missing/invalid, the Call button is disabled or hidden and the UI displays an English fallback (e.g., \"No phone number on file\").",
+        "Ambulance markers shown on the tactical map include the ambulance name and/or phone in the popup/label when available (without breaking existing marker smoothing/in-place updates)."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Add/extend React Query hooks so the Police interface fetches the combined radar data (ambulance location + profile contact fields) from the new backend query and uses it for rendering.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-8"
+        ],
+        "quotes": [
+          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A new/updated hook in `frontend/src/hooks/useQueries.ts` fetches the combined police radar dataset and is used by `PoliceInterface` instead of (or in addition to) `useGetLocationsInRadius`.",
+        "Polling/refresh behavior remains consistent with the current live-tracking experience (no regression in update frequency).",
+        "TypeScript types are updated so the Police interface compiles cleanly with the new data shape."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/immutablePaths (compose existing UI components instead).",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration code if state layout changes (not expected for these changes)."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not edit files under `frontend/src/components/ui` (compose them only).",
+    "Do not edit immutable paths: `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, and `frontend/src/components/ui/*`.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not change SOS alert polling frequency unless it is directly required to fix the Police interface bug.",
-    "Do not introduce new authentication methods beyond Internet Identity.",
-    "Do not add external databases or third-party real-time systems (e.g., WebSockets)."
+    "Do not add SMS/messaging, push notifications, or email-based calling workflows.",
+    "Do not add third-party authentication beyond Internet Identity.",
+    "Do not implement real-time WebSocket updates; keep the existing polling approach."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

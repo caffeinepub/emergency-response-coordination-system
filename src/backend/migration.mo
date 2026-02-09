@@ -1,68 +1,80 @@
 import Map "mo:core/Map";
 import Principal "mo:core/Principal";
+import Nat "mo:core/Nat";
+import Array "mo:core/Array";
 import Time "mo:core/Time";
 
 module {
+  // Original types
+  type OldUserProfile = {
+    name : Text;
+    role : AppRole;
+  };
+
+  type OldActor = {
+    userProfiles : Map.Map<Principal, OldUserProfile>;
+    ambulanceLocations : Map.Map<Principal, AmbulanceLocation>;
+    policeLocations : Map.Map<Principal, PoliceLocation>;
+    sosAlerts : Map.Map<Principal, SOSAlert>;
+  };
+
+  // New types
+  type NewUserProfile = {
+    name : Text;
+    phoneNumber : Text;
+    role : AppRole;
+  };
+
+  type NewActor = {
+    userProfiles : Map.Map<Principal, NewUserProfile>;
+    ambulanceLocations : Map.Map<Principal, AmbulanceLocation>;
+    policeLocations : Map.Map<Principal, PoliceLocation>;
+    sosAlerts : Map.Map<Principal, SOSAlert>;
+  };
+
+  type AppRole = {
+    #police;
+    #ambulance;
+  };
+
   type Coordinates = {
     latitude : Float;
     longitude : Float;
   };
 
-  type AmbulanceId = Principal;
-  type LocationId = Nat;
-  type UserProfile = {
-    name : Text;
-    role : AppRole;
-  };
-  type AppRole = {
-    #police;
-    #ambulance;
-  };
   type AmbulanceLocation = {
-    ambulanceId : AmbulanceId;
+    ambulanceId : Principal;
     coordinates : Coordinates;
     timestamp : Time.Time;
-  };
-  type SOSAlertOld = {
-    ambulanceId : AmbulanceId;
-    coordinates : Coordinates;
-    timestamp : Time.Time;
-    active : Bool;
   };
 
-  type SOSAlertNew = {
-    ambulanceId : AmbulanceId;
+  type PoliceLocation = {
+    policeId : Principal;
+    coordinates : Coordinates;
+    timestamp : Time.Time;
+  };
+
+  type SOSAlert = {
+    ambulanceId : Principal;
     coordinates : Coordinates;
     timestamp : Time.Time;
     active : Bool;
     targetPolice : [Principal];
   };
 
-  type AppStateOld = {
-    userProfiles : Map.Map<Principal, UserProfile>;
-    ambulanceLocations : Map.Map<AmbulanceId, AmbulanceLocation>;
-    sosAlerts : Map.Map<AmbulanceId, SOSAlertOld>;
-  };
-
-  type AppStateNew = {
-    userProfiles : Map.Map<Principal, UserProfile>;
-    ambulanceLocations : Map.Map<AmbulanceId, AmbulanceLocation>;
-    sosAlerts : Map.Map<AmbulanceId, SOSAlertNew>;
-  };
-
-  public func run(old : AppStateOld) : AppStateNew {
-    let newSosAlerts = old.sosAlerts.map<AmbulanceId, SOSAlertOld, SOSAlertNew>(
-      func(_aid, oldAlert) {
+  public func run(old : OldActor) : NewActor {
+    let newUserProfiles = old.userProfiles.map<Principal, OldUserProfile, NewUserProfile>(
+      func(_k, oldProfile) {
         {
-          oldAlert with
-          targetPolice = []
+          name = oldProfile.name;
+          phoneNumber = "";
+          role = oldProfile.role;
         };
       }
     );
-
     {
-      old with
-      sosAlerts = newSosAlerts
+      old with userProfiles = newUserProfiles;
     };
   };
 };
+

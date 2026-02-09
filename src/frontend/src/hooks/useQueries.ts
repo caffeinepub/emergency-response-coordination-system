@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, Coordinates, AmbulanceLocation, SOSAlert } from '../backend';
+import type { UserProfile, Coordinates, AmbulanceLocation, SOSAlert, AmbulanceContact } from '../backend';
 import { LOCATION_UPDATE_INTERVAL } from '../utils/locationRefresh';
 
 // User Profile Queries
@@ -37,9 +37,21 @@ export function useSaveCallerUserProfile() {
       } catch (error: any) {
         // Extract meaningful error message from backend trap
         const errorMessage = error?.message || String(error);
-        if (errorMessage.includes('Unauthorized') || errorMessage.includes('trap')) {
+        
+        // Check for phone number validation errors
+        if (errorMessage.includes('Phone number must be exactly 10 digits')) {
+          throw new Error('Phone number must be exactly 10 digits');
+        }
+        if (errorMessage.includes('Phone number must contain only digits')) {
+          throw new Error('Phone number must contain only digits (0-9)');
+        }
+        
+        // Check for authorization errors
+        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Anonymous')) {
           throw new Error('Unable to save profile. Please try logging in again.');
         }
+        
+        // Generic error
         throw new Error('Failed to save profile. Please try again.');
       }
     },
@@ -91,6 +103,32 @@ export function useGetLocationsInRadius(center: Coordinates | null, radius: numb
     queryFn: async () => {
       if (!actor || !center) return [];
       return actor.getLocationsInRadius(center, radius);
+    },
+    enabled: !!actor && !actorFetching && !!center,
+    refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates
+    staleTime: 10000, // Consider data stale after 10 seconds
+  });
+}
+
+// Combined ambulance radar data (locations + contacts)
+export function useGetAmbulanceContactsInRadius(center: Coordinates | null, radius: number) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<AmbulanceContact[]>({
+    queryKey: ['ambulanceContacts', center, radius],
+    queryFn: async () => {
+      if (!actor || !center) return [];
+      try {
+        return actor.getAmbulanceContactsInRadius(center, radius);
+      } catch (error: any) {
+        // Handle authorization errors gracefully
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only police')) {
+          console.error('Authorization error fetching ambulance contacts:', errorMessage);
+          return [];
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !actorFetching && !!center,
     refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates

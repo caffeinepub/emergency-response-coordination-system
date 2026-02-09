@@ -10,6 +10,7 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AmbulanceContact { 'name' : string, 'phoneNumber' : string }
 export type AmbulanceId = Principal;
 export interface AmbulanceLocation {
   'ambulanceId' : AmbulanceId,
@@ -33,7 +34,11 @@ export interface SOSAlert {
   'coordinates' : Coordinates,
 }
 export type Time = bigint;
-export interface UserProfile { 'name' : string, 'role' : AppRole }
+export interface UserProfile {
+  'name' : string,
+  'role' : AppRole,
+  'phoneNumber' : string,
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -44,8 +49,13 @@ export interface _SERVICE {
   'deactivateSOSForAmbulance' : ActorMethod<[AmbulanceId], undefined>,
   'deleteAmbulanceLocation' : ActorMethod<[AmbulanceId], undefined>,
   'getActiveSOSAlerts' : ActorMethod<[], Array<SOSAlert>>,
+  'getAllAmbulanceContacts' : ActorMethod<[], Array<AmbulanceContact>>,
   'getAllLocations' : ActorMethod<[], Array<AmbulanceLocation>>,
   'getAllSOSAlerts' : ActorMethod<[], Array<SOSAlert>>,
+  'getAmbulanceContactsInRadius' : ActorMethod<
+    [Coordinates, number],
+    Array<AmbulanceContact>
+  >,
   'getAmbulanceLocation' : ActorMethod<[AmbulanceId], [] | [AmbulanceLocation]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,

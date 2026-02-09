@@ -11,13 +11,41 @@ import { AppRole } from '../backend';
 
 export default function ProfileSetup() {
   const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState<'ambulance' | 'police'>('ambulance');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const saveProfile = useSaveCallerUserProfile();
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits
+    const digitsOnly = value.replace(/\D/g, '');
+    setPhoneNumber(digitsOnly);
+    
+    // Clear phone error when user starts typing
+    if (phoneError) {
+      setPhoneError(null);
+    }
+  };
+
+  const validatePhone = (): boolean => {
+    if (phoneNumber.length !== 10) {
+      setPhoneError('Phone number must be exactly 10 digits');
+      return false;
+    }
+    setPhoneError(null);
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    
+    // Validate phone number
+    if (!validatePhone()) {
+      return;
+    }
 
     // Clear any previous error
     setErrorMessage(null);
@@ -25,6 +53,7 @@ export default function ProfileSetup() {
     try {
       await saveProfile.mutateAsync({
         name: name.trim(),
+        phoneNumber: phoneNumber,
         role: role as AppRole,
       });
       // Success - the query refetch will trigger App.tsx to transition
@@ -40,7 +69,7 @@ export default function ProfileSetup() {
       <Card className="w-full max-w-md border-2 shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
-          <CardDescription>Choose your role and enter your name</CardDescription>
+          <CardDescription>Choose your role and enter your details</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -62,6 +91,27 @@ export default function ProfileSetup() {
                 required
                 disabled={saveProfile.isPending}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="Enter 10-digit phone number"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                maxLength={10}
+                required
+                disabled={saveProfile.isPending}
+                className={phoneError ? 'border-destructive' : ''}
+              />
+              {phoneError && (
+                <p className="text-sm text-destructive">{phoneError}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {phoneNumber.length}/10 digits
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -95,7 +145,7 @@ export default function ProfileSetup() {
               type="submit"
               size="lg"
               className="w-full bg-gradient-to-r from-emergency-blue to-emergency-red hover:opacity-90"
-              disabled={!name.trim() || saveProfile.isPending}
+              disabled={!name.trim() || phoneNumber.length !== 10 || saveProfile.isPending}
             >
               {saveProfile.isPending ? (
                 <>

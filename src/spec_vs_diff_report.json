@@ -1,76 +1,38 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T03:09:07.163Z",
-  "summary": "Diff introduces shared constants/utilities for 12s location refresh and 30m police radius, updates React Query polling for nearby locations to 12s, updates AmbulanceInterface to send immediate + 12s periodic location updates, and adds PoliceInterface audio initialization/play error handling. Some PoliceInterface interval + UI text/loading-state changes are not verifiable from the truncated diff; additionally, unrelated profile-save error handling/refetch logic appears added without being requested.",
+  "generatedAt": "2026-02-09T13:24:35.647Z",
+  "summary": "Most requested functionality appears to be implemented (phoneNumber field added, frontend profile flow collects/validates phone, new police-side hook and UI wiring referenced). However, the diff evidence is insufficient to confirm the REQ-5 backend police-authorized combined radar+contact query exists, because the relevant backend function is not shown in the truncated backend/main.mo snippet.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
-      "reason": "PoliceInterface.tsx shows a timer ref and imports LOCATION_UPDATE_INTERVAL, but the diff excerpt does not show any effect that performs an immediate update and then sets an interval to call useUpdatePoliceLocation every 12 seconds.",
+      "id": "REQ-5",
+      "requirement": "Add a police-authorized backend query that returns ambulance locations in radius along with each ambulance's profile contact fields (name + phoneNumber), and rejects non-police/non-admin callers; return empty/absent contact fields safely when profile missing.",
+      "reason": "The diff shows frontend adding a new hook `useGetAmbulanceContactsInRadius` and police UI consuming it, but the truncated `backend/main.mo` excerpt does not show any new police-authorized query that returns combined location+contact data (nor its authorization checks / missing-profile behavior).",
       "evidence": [
-        "frontend/src/pages/PoliceInterface.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling).",
-      "reason": "The diff summary is truncated and only shows some updated intervals (e.g., 12s refetchInterval and ambulance 12s setInterval). It does not provide enough visibility to confirm no other location refresh/polling timers elsewhere still use a different interval.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "frontend/src/pages/AmbulanceInterface.tsx (truncated)",
-        "frontend/src/pages/PoliceInterface.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
-      "reason": "Constants/utilities for formatting 30m exist, but the truncated PoliceInterface.tsx excerpt does not show the actual rendered badge/empty-state strings being updated to '30m'.",
-      "evidence": [
-        "frontend/src/pages/PoliceInterface.tsx (truncated)",
-        "frontend/src/utils/locationRefresh.ts"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
-      "reason": "PoliceInterface.tsx shows it now reads isLoading/isFetching from useGetLocationsInRadius, but the diff excerpt is truncated before any JSX rendering, so the loading/empty-state conditional logic cannot be verified.",
-      "evidence": [
-        "frontend/src/pages/PoliceInterface.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
-      "reason": "The diff excerpt does not show the geolocation permission-denied handling/render-path changes (e.g., fallback UI, guarding queries when location is null) in PoliceInterface; it only shows state variables and some logic unrelated to permission denial handling.",
-      "evidence": [
-        "frontend/src/pages/PoliceInterface.tsx (truncated)"
+        "backend/main.mo (truncated; no combined police radar+contact query shown)",
+        "frontend/src/hooks/useQueries.ts (truncated; references new combined query hook)",
+        "frontend/src/pages/PoliceInterface.tsx (uses useGetAmbulanceContactsInRadius)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Additional error-message mapping and forced invalidate+refetch behavior for saving caller user profile.",
-      "reason": "REQ-1/REQ-2/REQ-3 are about location refresh intervals, police radius display/querying, and PoliceInterface runtime/loading/audio robustness. The diff adds new logic for profile saving error handling and immediate refetch that is not requested.",
+      "description": "Added a backend migration module and wired actor migration via `(with migration = Migration.run)`",
+      "reason": "BuildRequest constraints emphasize keeping the backend as a single Motoko actor in `backend/main.mo` with no additional backend services; adding `backend/migration.mo` and migration wiring is not explicitly requested by any REQ.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts"
-      ]
-    },
-    {
-      "description": "Police radius constant imported/used in AmbulanceInterface (POLICE_RADIUS_KM) implying radius-related behavior changes outside the police interface.",
-      "reason": "REQ-2 is explicitly police-side radius for detecting/displaying nearby ambulances; the diff shows AmbulanceInterface importing POLICE_RADIUS_KM and formatRadius, which suggests radius handling may have been extended beyond what was requested.",
-      "evidence": [
-        "frontend/src/pages/AmbulanceInterface.tsx (truncated)"
+        "backend/migration.mo (added)",
+        "backend/main.mo (imports Migration and uses `(with migration = Migration.run)`)"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/components/ProfileSetup.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/AmbulanceInterface.tsx",
     "frontend/src/pages/PoliceInterface.tsx",
-    "frontend/src/utils/locationRefresh.ts",
     "project_state.json"
   ]
 }

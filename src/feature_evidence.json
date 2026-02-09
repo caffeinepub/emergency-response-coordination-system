@@ -2,13 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-set-the-coordinate-refresh-update-interval-to-12-seconds-across-the-app-wherever-continuous-location-updates-or-location-polling-is-performed-ambulance-location-updates-police-location-updates-and-polling-for-nearby-locations",
-      "featureTitle": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
+      "featureId": "feature-update-the-profile-setup-flow-shown-immediately-after-login-when-no-profile-exists-to-also-collect-the-user-s-phone-number-validating-it-as-exactly-10-digits-before-allowing-submission",
+      "featureTitle": "Update the profile setup flow (shown immediately after login when no profile exists) to also collect the user's phone number, validating it as exactly 10 digits before allowing submission.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AmbulanceInterface.tsx",
-        "frontend/src/pages/PoliceInterface.tsx",
-        "frontend/src/utils/locationRefresh.ts"
+        "frontend/src/components/ProfileSetup.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -19,16 +17,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-6"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-change-the-police-side-radius-used-for-detecting-displaying-nearby-ambulances-from-the-current-value-to-30-meters-0-03-km-and-update-any-user-facing-radius-text-to-display-as-30m-not-0-03km-or-0-03-km",
-      "featureTitle": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
+      "featureId": "feature-update-the-police-interface-radar-list-and-map-marker-labels-so-that-when-an-ambulance-is-visible-it-shows-ambulance-name-phone-number-and-current-coordinates-and-provide-a-call-button-that-initiates-a-direct-phone-call-to-that-number",
+      "featureTitle": "Update the Police interface radar list and map marker labels so that when an ambulance is visible, it shows: ambulance name, phone number, and current coordinates; and provide a \"Call\" button that initiates a direct phone call to that number.",
       "files": [
-        "frontend/src/pages/PoliceInterface.tsx",
-        "frontend/src/utils/locationRefresh.ts"
+        "frontend/src/pages/PoliceInterface.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -39,13 +36,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-7"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-investigate-and-fix-the-reported-police-interface-bug-by-identifying-the-user-visible-failure-mode-and-applying-a-code-fix-so-the-police-interface-operates-without-runtime-errors-and-provides-correct-loading-error-feedback",
-      "featureTitle": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "featureId": "feature-add-extend-react-query-hooks-so-the-police-interface-fetches-the-combined-radar-data-ambulance-location-profile-contact-fields-from-the-new-backend-query-and-uses-it-for-rendering",
+      "featureTitle": "Add/extend React Query hooks so the Police interface fetches the combined radar data (ambulance location + profile contact fields) from the new backend query and uses it for rendering.",
       "files": [
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/PoliceInterface.tsx"
@@ -59,7 +56,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-8"
       ],
       "confidence": "high"
     }

@@ -31,9 +31,14 @@ export interface AmbulanceLocation {
     timestamp: Time;
     coordinates: Coordinates;
 }
+export interface AmbulanceContact {
+    name: string;
+    phoneNumber: string;
+}
 export interface UserProfile {
     name: string;
     role: AppRole;
+    phoneNumber: string;
 }
 export enum AppRole {
     ambulance = "ambulance",
@@ -50,8 +55,10 @@ export interface backendInterface {
     deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
+    getAllAmbulanceContacts(): Promise<Array<AmbulanceContact>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
     getAllSOSAlerts(): Promise<Array<SOSAlert>>;
+    getAmbulanceContactsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceContact>>;
     getAmbulanceLocation(ambulanceId: AmbulanceId): Promise<AmbulanceLocation | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;

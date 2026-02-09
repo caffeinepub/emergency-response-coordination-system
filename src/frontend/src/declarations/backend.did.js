@@ -27,6 +27,10 @@ export const SOSAlert = IDL.Record({
   'targetPolice' : IDL.Vec(PoliceId),
   'coordinates' : Coordinates,
 });
+export const AmbulanceContact = IDL.Record({
+  'name' : IDL.Text,
+  'phoneNumber' : IDL.Text,
+});
 export const AmbulanceLocation = IDL.Record({
   'ambulanceId' : AmbulanceId,
   'timestamp' : Time,
@@ -36,7 +40,11 @@ export const AppRole = IDL.Variant({
   'ambulance' : IDL.Null,
   'police' : IDL.Null,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'role' : AppRole,
+  'phoneNumber' : IDL.Text,
+});
 export const PoliceLocation = IDL.Record({
   'timestamp' : Time,
   'policeId' : PoliceId,
@@ -50,8 +58,18 @@ export const idlService = IDL.Service({
   'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),
   'deleteAmbulanceLocation' : IDL.Func([AmbulanceId], [], []),
   'getActiveSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
+  'getAllAmbulanceContacts' : IDL.Func(
+      [],
+      [IDL.Vec(AmbulanceContact)],
+      ['query'],
+    ),
   'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),
   'getAllSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
+  'getAmbulanceContactsInRadius' : IDL.Func(
+      [Coordinates, IDL.Float64],
+      [IDL.Vec(AmbulanceContact)],
+      ['query'],
+    ),
   'getAmbulanceLocation' : IDL.Func(
       [AmbulanceId],
       [IDL.Opt(AmbulanceLocation)],
@@ -120,13 +138,21 @@ export const idlFactory = ({ IDL }) => {
     'targetPolice' : IDL.Vec(PoliceId),
     'coordinates' : Coordinates,
   });
+  const AmbulanceContact = IDL.Record({
+    'name' : IDL.Text,
+    'phoneNumber' : IDL.Text,
+  });
   const AmbulanceLocation = IDL.Record({
     'ambulanceId' : AmbulanceId,
     'timestamp' : Time,
     'coordinates' : Coordinates,
   });
   const AppRole = IDL.Variant({ 'ambulance' : IDL.Null, 'police' : IDL.Null });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'role' : AppRole,
+    'phoneNumber' : IDL.Text,
+  });
   const PoliceLocation = IDL.Record({
     'timestamp' : Time,
     'policeId' : PoliceId,
@@ -140,8 +166,18 @@ export const idlFactory = ({ IDL }) => {
     'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),
     'deleteAmbulanceLocation' : IDL.Func([AmbulanceId], [], []),
     'getActiveSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
+    'getAllAmbulanceContacts' : IDL.Func(
+        [],
+        [IDL.Vec(AmbulanceContact)],
+        ['query'],
+      ),
     'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),
     'getAllSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
+    'getAmbulanceContactsInRadius' : IDL.Func(
+        [Coordinates, IDL.Float64],
+        [IDL.Vec(AmbulanceContact)],
+        ['query'],
+      ),
     'getAmbulanceLocation' : IDL.Func(
         [AmbulanceId],
         [IDL.Opt(AmbulanceLocation)],

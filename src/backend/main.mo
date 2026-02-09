@@ -8,10 +8,13 @@ import Text "mo:core/Text";
 import Float "mo:core/Float";
 import List "mo:core/List";
 import Int "mo:core/Int";
-
+import Char "mo:core/Char";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Supply migration module via with clause. Must be first for code to compile.
+(with migration = Migration.run)
 actor {
   type Coordinates = {
     latitude : Float;
@@ -23,6 +26,7 @@ actor {
 
   type UserProfile = {
     name : Text;
+    phoneNumber : Text;
     role : AppRole;
   };
 
@@ -49,6 +53,11 @@ actor {
     timestamp : Time.Time;
     active : Bool;
     targetPolice : [PoliceId];
+  };
+
+  type AmbulanceContact = {
+    name : Text;
+    phoneNumber : Text;
   };
 
   let userProfiles = Map.empty<Principal, UserProfile>();
@@ -121,17 +130,18 @@ actor {
       Runtime.trap("Unauthorized: Anonymous users cannot create profiles");
     };
 
+    validatePhoneNumber(profile.phoneNumber);
+
     switch (userProfiles.get(caller)) {
       case (?existingProfile) {
-        // Existing user can only update their name, not their role
         let updatedProfile : UserProfile = {
           name = profile.name;
+          phoneNumber = profile.phoneNumber;
           role = existingProfile.role; // Keep existing role
         };
         userProfiles.add(caller, updatedProfile);
       };
       case (null) {
-        // New authenticated user - allow creating initial profile with role selection
         userProfiles.add(caller, profile);
       };
     };
@@ -142,7 +152,20 @@ actor {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can set user profiles with roles");
     };
+    validatePhoneNumber(profile.phoneNumber);
     userProfiles.add(user, profile);
+  };
+
+  func validatePhoneNumber(phoneNumber : Text) {
+    if (phoneNumber.size() != 10) {
+      Runtime.trap("Phone number must be exactly 10 digits");
+    };
+
+    for (c in phoneNumber.chars()) {
+      if (c < '0' or c > '9') {
+        Runtime.trap("Phone number must contain only digits (0-9)");
+      };
+    };
   };
 
   // Ambulance Location Management
@@ -236,6 +259,41 @@ actor {
     );
 
     sorted.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
+  };
+
+  // Police query for ambulance contacts in radius
+  public query ({ caller }) func getAmbulanceContactsInRadius(center : Coordinates, radius : Float) : async [AmbulanceContact] {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot query ambulance contacts");
+    };
+    if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only police or admin can query ambulance contacts");
+    };
+
+    let filteredLocations = ambulanceLocations.toArray().filter(
+      func((_, location)) {
+        calculateDistance(center, location.coordinates) <= radius;
+      }
+    );
+
+    filteredLocations.map(
+      func((ambulanceId, _)) {
+        switch (userProfiles.get(ambulanceId)) {
+          case (?profile) {
+            {
+              name = profile.name;
+              phoneNumber = profile.phoneNumber;
+            };
+          };
+          case (null) {
+            {
+              name = "Unknown";
+              phoneNumber = "Unknown";
+            };
+          };
+        };
+      }
+    );
   };
 
   // SOS Alert Management
@@ -411,6 +469,21 @@ actor {
       }
     );
     filtered.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
+  };
+
+  public query ({ caller }) func getAllAmbulanceContacts() : async [AmbulanceContact] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view ambulance contacts");
+    };
+    let profiles = userProfiles.toArray();
+    profiles.map<(Principal, UserProfile), AmbulanceContact>(
+      func((_, profile)) {
+        {
+          name = profile.name;
+          phoneNumber = profile.phoneNumber;
+        };
+      }
+    );
   };
 
   public query ({ caller }) func getLocationsCountInRadius(center : Coordinates, radius : Float) : async Nat {

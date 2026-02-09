@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Standardize coordinate refresh behavior to 12 seconds, set the Police nearby-ambulance detection radius to 30m, and resolve the Police interface runtime/UX bug.
+**Goal:** Collect and validate ambulance users’ 10-digit phone numbers, and let police view ambulance contact details on radar and place a direct call.
 
 **Planned changes:**
-- Update all continuous coordinate update/polling intervals (Ambulance updates, Police updates, and nearby-ambulance polling) to run every 12 seconds, with an immediate initial update for both Ambulance and Police.
-- Change Police-side nearby-ambulance radius to 0.03 km (30m) and update all Police UI radius text to display “30m”, including meter formatting for sub‑1km values.
-- Investigate and fix the Police interface bug to prevent runtime errors, ensure correct loading/empty/error states in Nearby Ambulances, and ensure SOS alert sound failures do not crash the interface.
+- Extend the backend `UserProfile` to include `phoneNumber`, enforcing exactly 10 digits (0–9 only) on save while preserving existing role immutability rules.
+- Add a police-authorized backend query that returns nearby ambulance locations along with each ambulance’s profile contact details (name + phone number) when available.
+- Update the post-login `ProfileSetup` flow to require a phone number input, restrict to digits, validate exactly 10 digits, and show English validation errors.
+- Update the Police interface radar list and map marker labels/popups to display ambulance name, phone number, and coordinates, and add a “Call” button using a `tel:` link (with safe fallback when missing).
+- Add/extend React Query hooks and TypeScript types so the Police interface fetches and renders the combined radar + contact dataset without changing existing polling behavior.
 
-**User-visible outcome:** Location updates and nearby-ambulance results refresh every 12 seconds; the Police screen monitors a 30m radius with correctly formatted text; the Police interface runs reliably with proper loading/error feedback even if location permission is denied or alert audio cannot play.
+**User-visible outcome:** Ambulance users are prompted to enter a name and valid 10-digit phone number on first setup; police users can see each nearby ambulance’s name, phone number, and coordinates on the radar/map and can tap a “Call” button to dial them (or see a clear fallback if no number is available).

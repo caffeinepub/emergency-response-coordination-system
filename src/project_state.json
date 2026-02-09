@@ -1,34 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Ambulance/police map-based app where ambulances appear on police radar; adding user identity + contact info capture and display, with direct-call from police view.",
   "architectural_notes": [],
-  "known_issues": [
-    "Bug reported in police interface (details TBD)"
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-set-the-coordinate-refresh-update-interval-to-12-seconds-across-the-app-wherever-continuous-location-updates-or-location-polling-is-performed-ambulance-location-updates-police-location-updates-and-polling-for-nearby-locations",
-      "title": "Set the coordinate refresh/update interval to 12 seconds across the app wherever continuous location updates or location polling is performed (ambulance location updates, police location updates, and polling for nearby locations).",
+      "id": "feature-update-the-profile-setup-flow-shown-immediately-after-login-when-no-profile-exists-to-also-collect-the-user-s-phone-number-validating-it-as-exactly-10-digits-before-allowing-submission",
+      "title": "Update the profile setup flow (shown immediately after login when no profile exists) to also collect the user's phone number, validating it as exactly 10 digits before allowing submission.",
       "reqIds": [
-        "REQ-1"
+        "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-change-the-police-side-radius-used-for-detecting-displaying-nearby-ambulances-from-the-current-value-to-30-meters-0-03-km-and-update-any-user-facing-radius-text-to-display-as-30m-not-0-03km-or-0-03-km",
-      "title": "Change the police-side radius used for detecting/displaying nearby ambulances from the current value to 30 meters (0.03 km), and update any user-facing radius text to display as “30m” (not “0.03km” or “0.03 km”).",
+      "id": "feature-update-the-police-interface-radar-list-and-map-marker-labels-so-that-when-an-ambulance-is-visible-it-shows-ambulance-name-phone-number-and-current-coordinates-and-provide-a-call-button-that-initiates-a-direct-phone-call-to-that-number",
+      "title": "Update the Police interface radar list and map marker labels so that when an ambulance is visible, it shows: ambulance name, phone number, and current coordinates; and provide a \"Call\" button that initiates a direct phone call to that number.",
       "reqIds": [
-        "REQ-2"
+        "REQ-7"
       ],
       "version": 1
     },
     {
-      "id": "feature-investigate-and-fix-the-reported-police-interface-bug-by-identifying-the-user-visible-failure-mode-and-applying-a-code-fix-so-the-police-interface-operates-without-runtime-errors-and-provides-correct-loading-error-feedback",
-      "title": "Investigate and fix the reported Police Interface bug by identifying the user-visible failure mode and applying a code fix so the Police interface operates without runtime errors and provides correct loading/error feedback.",
+      "id": "feature-add-extend-react-query-hooks-so-the-police-interface-fetches-the-combined-radar-data-ambulance-location-profile-contact-fields-from-the-new-backend-query-and-uses-it-for-rendering",
+      "title": "Add/extend React Query hooks so the Police interface fetches the combined radar data (ambulance location + profile contact fields) from the new backend query and uses it for rendering.",
       "reqIds": [
-        "REQ-3"
+        "REQ-8"
       ],
       "version": 1
     }
@@ -36,24 +34,40 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Change coordinate refresh interval to 12 seconds",
+      "summary": "Ambulance login: prompt for user name and phone number; phone must be exactly 10 digits (validation).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Change radius to 30 meters",
+      "summary": "Police radar: when an ambulance appears, show its location plus the ambulance user's name and phone number.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Investigate and fix bug in police interface",
+      "summary": "Police radar: add a call button to directly call the ambulance using the provided phone number.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Extend the backend user profile model to store an ambulance user's phone number and enforce that it is exactly 10 digits (0-9 only) when saving a profile.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add a backend query that allows police users to retrieve ambulance contact details (name + phone number) for ambulances returned in the police radar results.",
+      "reqIds": [
+        "REQ-5"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Adjust coordinate refresh to 12s, set radius to 30m, and fix Police Interface bug",
+  "projectName": "Collect ambulance contact info (name + 10-digit phone) and show/call it from police radar",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

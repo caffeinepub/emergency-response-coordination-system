@@ -1,84 +1,70 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "12s coordinate refresh, 30m police radius, and Police Interface stability fixes",
+  "title": "Ambulance phone capture + police radar contact display and calling",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Standardize continuous coordinate update/polling intervals to 12 seconds with immediate initial updates.",
+      "id": "REQ-6",
+      "summary": "Collect and validate a required 10-digit phone number during first-time profile setup and include it in profile saves.",
       "acceptanceCriteria": [
-        "Ambulance interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
-        "Police interface sends location updates to the backend every 12 seconds (and does an immediate initial update).",
-        "Polling for nearby ambulances/locations (React Query refetchInterval) runs every 12 seconds.",
-        "No other coordinate-refresh timers remain at a different interval unless explicitly unrelated to coordinate refresh (e.g., SOS alert polling)."
+        "`ProfileSetup` displays a required phone number input in addition to the existing name and role fields.",
+        "The phone number field only accepts digits (UI-level filtering is allowed) and submission is blocked unless it is exactly 10 digits.",
+        "If validation fails, an English error message is shown to the user (e.g., \"Phone number must be exactly 10 digits\").",
+        "On successful save, the app transitions as it does today (App routes user into the correct interface)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/locationRefresh.ts",
-          "operation": "create",
-          "description": "Add shared constants/utilities for coordinate refresh timing (12s) to avoid divergent intervals across ambulance updates, police updates, and nearby polling."
-        },
-        {
-          "path": "frontend/src/pages/AmbulanceInterface.tsx",
+          "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "Replace local location update interval constant with the shared 12s refresh constant; keep the immediate initial update behavior and ensure displayed text reflects 12 seconds."
-        },
-        {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
-          "operation": "modify",
-          "description": "Replace local police location update interval constant with the shared 12s refresh constant; keep the immediate initial update behavior and ensure any user-facing text reflects 12 seconds."
+          "description": "Add a required phone number field to the profile setup form, with UI-level digits-only filtering and a hard check for exactly 10 digits before submission; include `phoneNumber` in the saved `UserProfile`; show a clear English inline error message when validation fails. Compose existing shadcn/ui inputs/alerts/buttons only (do not edit `frontend/src/components/ui/*`). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Replace hardcoded nearby-location polling interval with the shared 12s refresh constant; confirm this change only affects coordinate refresh polling (leave SOS alert polling frequency unchanged)."
+          "description": "Update `useSaveCallerUserProfile` error handling to preserve and surface clear backend validation trap messages (e.g., invalid phone) to the UI when safe, while still handling authorization failures gracefully; ensure the mutation accepts and passes through `phoneNumber` as part of `UserProfile`. (Selected component: authorization — handle auth/role-related trap errors gracefully per guidance; verify the component's usage instructions before implementing.)"
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Set police nearby-ambulance detection radius to 30m (0.03 km) and display radius text as “30m”, using meters for sub‑1km values.",
+      "id": "REQ-7",
+      "summary": "Show ambulance name/phone/coordinates in the Police radar list and map labels, and provide a Call button using a tel: link when a valid number exists.",
       "acceptanceCriteria": [
-        "Police interface queries nearby ambulances using a radius of 0.03 km (30 meters).",
-        "The Police interface status badge and empty-state text reflect a 30m radius in English (e.g., “Monitoring 30m radius …”, “No ambulances detected within 30m radius”).",
-        "Any distance/radius formatting in the Police interface shows meters for sub‑1km values, including the configured radius."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/locationRefresh.ts",
-          "operation": "modify",
-          "description": "Add/adjust shared police radius constant to 0.03 km (30 meters) and (optionally) a helper to format radius text as meters for sub‑1km values."
-        },
-        {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
-          "operation": "modify",
-          "description": "Update the nearby-ambulance radius used by the police query to 0.03 km and update UI strings to show “30m” (status badge + empty state); ensure any radius formatting uses meters for sub‑1km values, including the configured radius."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Fix Police Interface runtime issues and improve loading/error feedback, including graceful SOS alert sound failures.",
-      "acceptanceCriteria": [
-        "Police interface renders without console errors during normal use (with location allowed) and when location permission is denied.",
-        "The Nearby Ambulances section shows an appropriate loading state when data is fetching, and does not get stuck due to incorrect conditions.",
-        "If SOS alert sound cannot be initialized/played (browser restrictions), the Police interface continues to function and fails gracefully (no crash)."
+        "For each nearby ambulance in the Police interface list, the UI displays: Name, Phone number, and Location (latitude/longitude), alongside the existing distance/last update information.",
+        "Each ambulance entry includes a visible \"Call\" button that uses a `tel:` link to dial the displayed phone number.",
+        "If a phone number is missing/invalid, the Call button is disabled or hidden and the UI displays an English fallback (e.g., \"No phone number on file\").",
+        "Ambulance markers shown on the tactical map include the ambulance name and/or phone in the popup/label when available (without breaking existing marker smoothing/in-place updates)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Harden audio initialization/playback with try/catch and safe guards (e.g., handle missing/blocked AudioContext, suspended contexts, and oscillator creation failures) so SOS alert sound issues never crash the UI; optionally show non-blocking UI feedback when sound is unavailable."
-        },
+          "description": "Switch the radar rendering to use the combined ambulance radar dataset (location + contact fields) from the updated query hook; render Name, Phone number, and Coordinates (lat/lng) in each list entry while keeping existing distance/last-update UI; add a \"Call\" control using a `tel:` link when `phoneNumber` is exactly 10 digits, otherwise show an English fallback and disable/hide calling; update ambulance map marker `label`/popup text to include ambulance name and/or phone (and optionally coordinates) when available while keeping marker IDs stable to preserve smoothing/in-place updates. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Add/extend React Query hooks and TypeScript types so Police fetches and renders combined radar data (ambulance location + contact fields) with unchanged polling behavior.",
+      "acceptanceCriteria": [
+        "A new/updated hook in `frontend/src/hooks/useQueries.ts` fetches the combined police radar dataset and is used by `PoliceInterface` instead of (or in addition to) `useGetLocationsInRadius`.",
+        "Polling/refresh behavior remains consistent with the current live-tracking experience (no regression in update frequency).",
+        "TypeScript types are updated so the Police interface compiles cleanly with the new data shape."
+      ],
+      "file_operations": [
         {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "path": "frontend/src/backend.d.ts",
           "operation": "modify",
-          "description": "Fix Nearby Ambulances loading/empty/error rendering conditions (e.g., show loading when the radius query is fetching and location is available; show a clear message when location is unavailable/denied) to prevent stuck or misleading states; ensure no console errors when geolocation permission is denied."
+          "description": "Extend frontend backend-actor TypeScript definitions to include the new police-authorized backend capability for fetching combined radar results (ambulance location + contact fields for the same ambulanceId). Add/adjust exported types needed for the combined result shape so the Police UI can compile cleanly against the new data."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Ensure the nearby-locations React Query hook exposes accurate fetch/loading behavior for the Police interface (while keeping existing SOS alert polling unchanged), so the UI can reliably render loading/error feedback."
+          "description": "Introduce a new React Query hook (or update an existing one) that fetches the combined police radar dataset via the new backend capability and polls using the same interval as the current live-tracking experience (reuse `LOCATION_UPDATE_INTERVAL`); export types for the combined item shape for UI use; keep existing hooks intact as needed for other pages. (Selected component: authorization — ensure query errors from police-only authorization are handled gracefully in UI flows; verify the component's usage instructions before implementing.)"
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Wire the Police interface to consume the new combined radar hook (replacing `useGetLocationsInRadius` for radar rendering), ensuring refresh/polling behavior remains consistent and the component compiles with updated types."
         }
       ]
     }
