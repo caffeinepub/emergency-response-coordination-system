@@ -56,6 +56,7 @@ export interface backendInterface {
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
     getAllAmbulanceContacts(): Promise<Array<AmbulanceContact>>;
+    getAllAmbulanceLocations(): Promise<Array<AmbulanceLocation>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
     getAllSOSAlerts(): Promise<Array<SOSAlert>>;
     getAmbulanceContactsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceContact>>;

@@ -3,45 +3,96 @@ import { useTriggerSOS, useDeactivateSOS, useUpdateAmbulanceLocation, useGetMySO
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { AlertCircle, MapPin, Loader2, CheckCircle, Navigation } from 'lucide-react';
+import { AlertCircle, MapPin, Loader2, CheckCircle, Navigation, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import RealtimeMap, { MapMarker } from '../components/RealtimeMap';
 import type { Coordinates } from '../backend';
 import { LOCATION_UPDATE_INTERVAL, POLICE_RADIUS_KM, formatRadius } from '../utils/locationRefresh';
+import { processBackendUpdate, updateBackendState, BackendUpdateState, GPS_CONFIG } from '../utils/locationSmoothing';
 
 const SOS_DURATION = 60000; // 60 seconds
 
 export default function AmbulanceInterface() {
   const [location, setLocation] = useState<Coordinates | null>(null);
+  const [displayLocation, setDisplayLocation] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<string>('Acquiring GPS...');
   const [sosActive, setSosActive] = useState(false);
   const [sosTimer, setSosTimer] = useState<number | null>(null);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const locationUpdateTimerRef = useRef<number | null>(null);
+  const backendStateRef = useRef<BackendUpdateState | null>(null);
+  const lastRawPositionRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const triggerSOS = useTriggerSOS();
   const deactivateSOS = useDeactivateSOS();
   const updateLocation = useUpdateAmbulanceLocation();
   const { data: mySOSAlert } = useGetMySOSAlert();
 
-  // Get user's location continuously
+  // Get user's location continuously with accuracy filtering
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser');
+      setGpsStatus('Not supported');
       return;
     }
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        const coords: Coordinates = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+        const newLat = position.coords.latitude;
+        const newLng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        // Always update display location for map (will be smoothed by map component)
+        const displayCoords: Coordinates = {
+          latitude: newLat,
+          longitude: newLng,
         };
-        setLocation(coords);
+        setDisplayLocation(displayCoords);
+        lastRawPositionRef.current = { lat: newLat, lng: newLng };
+
+        // Process for backend updates with filtering and smoothing
+        const result = processBackendUpdate(
+          newLat,
+          newLng,
+          accuracy,
+          backendStateRef.current
+        );
+
+        if (result === null) {
+          // Fix rejected due to poor accuracy or outlier
+          if (accuracy !== undefined && accuracy > GPS_CONFIG.MAX_ACCURACY_METERS) {
+            setGpsStatus(`GPS accuracy poor (±${Math.round(accuracy)}m)`);
+          } else {
+            setGpsStatus('Filtering GPS outlier...');
+          }
+          setLocationError(null);
+          return;
+        }
+
+        // Update backend state
+        backendStateRef.current = updateBackendState(
+          newLat,
+          newLng,
+          result.coords.latitude,
+          result.coords.longitude,
+          backendStateRef.current
+        );
+
+        // Update location for backend updates
+        setLocation(result.coords);
         setLocationError(null);
+        
+        // Update status
+        if (accuracy !== undefined) {
+          setGpsStatus(`GPS active (±${Math.round(accuracy)}m)`);
+        } else {
+          setGpsStatus('GPS active');
+        }
       },
       (error) => {
         setLocationError(error.message);
+        setGpsStatus('GPS error');
       },
       {
         enableHighAccuracy: true,
@@ -131,18 +182,20 @@ export default function AmbulanceInterface() {
     }
   };
 
-  // Prepare map markers
-  const mapMarkers: MapMarker[] = location
+  // Prepare map markers (use display location for smooth rendering)
+  const mapMarkers: MapMarker[] = displayLocation
     ? [
         {
           id: 'ambulance',
-          lat: location.latitude,
-          lng: location.longitude,
+          lat: displayLocation.latitude,
+          lng: displayLocation.longitude,
           type: 'ambulance',
           label: 'Your Location (Ambulance)',
         },
       ]
     : [];
+
+  const showPoorAccuracyWarning = gpsStatus.includes('poor') || gpsStatus.includes('outlier');
 
   return (
     <div className="container mx-auto min-h-[calc(100vh-8rem)] px-4 py-8">
@@ -157,11 +210,11 @@ export default function AmbulanceInterface() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Real-time Map */}
-            {location && !locationError && (
+            {displayLocation && !locationError && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Live Location Map</h3>
                 <RealtimeMap
-                  center={{ lat: location.latitude, lng: location.longitude }}
+                  center={{ lat: displayLocation.latitude, lng: displayLocation.longitude }}
                   markers={mapMarkers}
                   zoom={16}
                   className="h-[400px]"
@@ -183,7 +236,7 @@ export default function AmbulanceInterface() {
                         <p>Latitude: {location.latitude.toFixed(6)}</p>
                         <p>Longitude: {location.longitude.toFixed(6)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="gap-1">
                           <Navigation className="h-3 w-3 animate-pulse text-emergency-blue" />
                           Live Tracking Active
@@ -193,9 +246,21 @@ export default function AmbulanceInterface() {
                             Updated {Math.floor((Date.now() - lastUpdateTime.getTime()) / 1000)}s ago
                           </span>
                         )}
+                        <Badge variant={showPoorAccuracyWarning ? "destructive" : "outline"} className="gap-1">
+                          {gpsStatus}
+                        </Badge>
                       </div>
+                      {showPoorAccuracyWarning && (
+                        <div className="flex items-start gap-2 rounded-md bg-yellow-500/10 p-2 text-xs text-yellow-700 dark:text-yellow-400">
+                          <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <span>
+                            GPS accuracy is currently poor. Updates are being filtered to ensure stable tracking.
+                            Move to an area with better sky visibility for improved accuracy.
+                          </span>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground">
-                        Location updates every {LOCATION_UPDATE_INTERVAL / 1000} seconds
+                        Location updates every {LOCATION_UPDATE_INTERVAL / 1000} seconds with outlier filtering and smoothing
                       </p>
                     </div>
                   ) : (
@@ -254,6 +319,10 @@ export default function AmbulanceInterface() {
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>
                   Your GPS location is continuously tracked and shared with police units every {LOCATION_UPDATE_INTERVAL / 1000} seconds
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-emergency-blue">•</span>
+                  GPS outliers and poor-accuracy fixes are automatically filtered for stable tracking
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emergency-blue">•</span>

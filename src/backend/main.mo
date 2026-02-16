@@ -9,12 +9,10 @@ import Float "mo:core/Float";
 import List "mo:core/List";
 import Int "mo:core/Int";
 import Char "mo:core/Char";
-import Migration "migration";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-// Supply migration module via with clause. Must be first for code to compile.
-(with migration = Migration.run)
 actor {
   type Coordinates = {
     latitude : Float;
@@ -109,16 +107,13 @@ actor {
 
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot fetch profiles");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can fetch profiles");
     };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot fetch profiles");
-    };
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
@@ -126,8 +121,8 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot create profiles");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
     };
 
     validatePhoneNumber(profile.phoneNumber);
@@ -170,8 +165,8 @@ actor {
 
   // Ambulance Location Management
   public shared ({ caller }) func updateAmbulanceLocation(coordinates : Coordinates) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot update location");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update location");
     };
     if (not isAmbulance(caller)) {
       Runtime.trap("Unauthorized: Only ambulance users can update ambulance location");
@@ -186,8 +181,8 @@ actor {
   };
 
   public query ({ caller }) func getAmbulanceLocation(ambulanceId : AmbulanceId) : async ?AmbulanceLocation {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view locations");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view locations");
     };
     if (caller != ambulanceId and not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own location or must be police/admin");
@@ -197,8 +192,8 @@ actor {
 
   // Police Location Management
   public shared ({ caller }) func updatePoliceLocation(coordinates : Coordinates) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot update police location");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update police location");
     };
     if (not isPolice(caller)) {
       Runtime.trap("Unauthorized: Only police users can update police location");
@@ -213,16 +208,31 @@ actor {
   };
 
   public query ({ caller }) func getPoliceLocation(policeId : PoliceId) : async ?PoliceLocation {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view police locations");
+    };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only police or admin can view police locations");
     };
     policeLocations.get(policeId);
   };
 
+  // New function for police to get all ambulance locations
+  public query ({ caller }) func getAllAmbulanceLocations() : async [AmbulanceLocation] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view ambulance locations");
+    };
+    if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only police or admin can view all ambulance locations");
+    };
+    let allLocations = ambulanceLocations.toArray();
+    allLocations.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
+  };
+
   // Police queries for nearby ambulances
   public query ({ caller }) func getLocationsInRadius(center : Coordinates, radius : Float) : async [AmbulanceLocation] {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot query locations");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only police or admin can query locations in radius");
@@ -237,8 +247,8 @@ actor {
   };
 
   public query ({ caller }) func getSortedLocationsInRadius(center : Coordinates, radius : Float) : async [AmbulanceLocation] {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot query locations");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only police or admin can query locations in radius");
@@ -263,8 +273,8 @@ actor {
 
   // Police query for ambulance contacts in radius
   public query ({ caller }) func getAmbulanceContactsInRadius(center : Coordinates, radius : Float) : async [AmbulanceContact] {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot query ambulance contacts");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query ambulance contacts");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only police or admin can query ambulance contacts");
@@ -298,15 +308,15 @@ actor {
 
   // SOS Alert Management
   public shared ({ caller }) func triggerSOS(coordinates : Coordinates) : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot trigger SOS");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can trigger SOS");
     };
     if (not isAmbulance(caller)) {
       Runtime.trap("Unauthorized: Only ambulance users can trigger SOS");
     };
 
     let allPolice = policeLocations.toArray();
-    let radius = 0.03; // 30 meters (0.03 km)
+    let radius = 0.05; // 50 meters (0.05 km)
 
     let policeWithinRadius = allPolice.filter(
       func((_, location)) {
@@ -346,8 +356,8 @@ actor {
   };
 
   public shared ({ caller }) func deactivateSOS() : async () {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot deactivate SOS");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can deactivate SOS");
     };
 
     switch (sosAlerts.get(caller)) {
@@ -393,8 +403,8 @@ actor {
   };
 
   public query ({ caller }) func getActiveSOSAlerts() : async [SOSAlert] {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view SOS alerts");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view SOS alerts");
     };
 
     if (AccessControl.isAdmin(accessControlState, caller)) {
@@ -419,8 +429,8 @@ actor {
   };
 
   public query ({ caller }) func getSOSAlert(alertId : AmbulanceId) : async ?SOSAlert {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view SOS alerts");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view SOS alerts");
     };
 
     switch (sosAlerts.get(alertId)) {
@@ -487,8 +497,8 @@ actor {
   };
 
   public query ({ caller }) func getLocationsCountInRadius(center : Coordinates, radius : Float) : async Nat {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot query location counts");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query location counts");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only police or admin can query location counts");

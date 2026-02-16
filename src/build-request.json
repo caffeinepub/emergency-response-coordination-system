@@ -1,114 +1,85 @@
 {
   "kind": "build_request",
-  "title": "Collect ambulance contact info (name + 10-digit phone) and show/call it from police radar",
-  "priority": "normal",
+  "title": "Fix police interface to reliably display accurate ambulance locations",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-4",
-      "text": "Extend the backend user profile model to store an ambulance user's phone number and enforce that it is exactly 10 digits (0-9 only) when saving a profile.",
-      "target": "backend",
+      "id": "REQ-1",
+      "text": "Ensure the police interface reliably shows ambulances on the map and in the list even when they are outside the configured radius, by adding a police-authorized backend query that returns all current ambulance locations and wiring the police UI to use it (with optional radius filtering as a client-side view filter).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-8"
+          "msg-1"
         ],
         "quotes": [
-          "bro in the ambulance interface when the user logs in it should ask them their name and also their phone number which should be a 10 digit number only"
+          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
         ]
       },
       "acceptanceCriteria": [
-        "Backend `UserProfile` includes a `phoneNumber` (Text) field in addition to `name` and `role`.",
-        "`saveCallerUserProfile` rejects profiles whose `phoneNumber` is not exactly 10 characters long or contains any non-digit characters, returning a clear trap message (English).",
-        "Existing behavior remains: first-time profile creation can set role; subsequent saves can update name/phone but must not change role."
+        "When logged in as a police user, the Police Command Center displays all ambulances that have a stored location in the backend (not only those within POLICE_RADIUS_KM).",
+        "Backend rejects the new “all ambulance locations” query for non-police/non-admin callers with an authorization trap consistent with existing patterns.",
+        "The police map shows ambulance markers for the returned ambulances and does not show an empty state solely due to radius filtering."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Add a backend query that allows police users to retrieve ambulance contact details (name + phone number) for ambulances returned in the police radar results.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-8"
-        ],
-        "quotes": [
-          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered"
-        ]
-      },
-      "acceptanceCriteria": [
-        "There is a police-authorized backend query that returns ambulance locations in radius along with each ambulance's profile contact fields (at minimum: name and phoneNumber) for the same ambulanceId.",
-        "The query traps or returns an authorization error if called by non-police and non-admin users.",
-        "If an ambulance does not yet have a profile, the returned contact fields are absent/empty in a way that the frontend can handle safely (no crashes)."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Update the profile setup flow (shown immediately after login when no profile exists) to also collect the user's phone number, validating it as exactly 10 digits before allowing submission.",
+      "id": "REQ-2",
+      "text": "Improve police-side visibility of stale/paused ambulance updates: do not hide ambulances purely because their last update is older than the current timeout; instead, keep them visible and clearly label them as “Offline / Last update: Xs ago”, and provide a UI toggle to hide/show offline ambulances.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-8"
+          "msg-1"
         ],
         "quotes": [
-          "when the user logs in it should ask them their name and also their phone number which should be a 10 digit number only"
+          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
         ]
       },
       "acceptanceCriteria": [
-        "`ProfileSetup` displays a required phone number input in addition to the existing name and role fields.",
-        "The phone number field only accepts digits (UI-level filtering is allowed) and submission is blocked unless it is exactly 10 digits.",
-        "If validation fails, an English error message is shown to the user (e.g., \"Phone number must be exactly 10 digits\").",
-        "On successful save, the app transitions as it does today (App routes user into the correct interface)."
+        "If an ambulance has not updated within the timeout window, it still appears in the list and on the map, and is visually marked as offline with a readable last-update age.",
+        "Police users can toggle “Show offline ambulances” on/off; turning it off hides those stale ambulances from both list and map.",
+        "The empty-state message (“No ambulances detected…”) only appears when there are truly no ambulances to show given the current toggle/filter settings."
       ]
     },
     {
-      "id": "REQ-7",
-      "text": "Update the Police interface radar list and map marker labels so that when an ambulance is visible, it shows: ambulance name, phone number, and current coordinates; and provide a \"Call\" button that initiates a direct phone call to that number.",
+      "id": "REQ-3",
+      "text": "Fix incorrect ambulance-to-contact association in the police interface by matching ambulance contacts by ambulanceId (principal) rather than by array index, so the displayed contact name/phone corresponds to the correct ambulance marker and list item.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-8"
+          "msg-1"
         ],
         "quotes": [
-          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered and add a button so that when it is clicked the police can directly call them"
+          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
         ]
       },
       "acceptanceCriteria": [
-        "For each nearby ambulance in the Police interface list, the UI displays: Name, Phone number, and Location (latitude/longitude), alongside the existing distance/last update information.",
-        "Each ambulance entry includes a visible \"Call\" button that uses a `tel:` link to dial the displayed phone number.",
-        "If a phone number is missing/invalid, the Call button is disabled or hidden and the UI displays an English fallback (e.g., \"No phone number on file\").",
-        "Ambulance markers shown on the tactical map include the ambulance name and/or phone in the popup/label when available (without breaking existing marker smoothing/in-place updates)."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Add/extend React Query hooks so the Police interface fetches the combined radar data (ambulance location + profile contact fields) from the new backend query and uses it for rendering.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-8"
-        ],
-        "quotes": [
-          "in police interface when the ambulance appears in their radar it should show their location along with their name and the phone number entered"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A new/updated hook in `frontend/src/hooks/useQueries.ts` fetches the combined police radar dataset and is used by `PoliceInterface` instead of (or in addition to) `useGetLocationsInRadius`.",
-        "Polling/refresh behavior remains consistent with the current live-tracking experience (no regression in update frequency).",
-        "TypeScript types are updated so the Police interface compiles cleanly with the new data shape."
+        "For a given ambulanceId, the same ambulanceId is used to retrieve and render that ambulance’s contact info in both the list and the map marker label.",
+        "Reordering of backend results (or differing order between location and contacts queries) does not cause contact information to appear under the wrong ambulance.",
+        "If no contact is available for an ambulanceId, the UI shows “Unknown” (or existing fallback) only for that specific ambulance."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not edit files under `frontend/src/components/ui` (compose them only).",
-    "Do not edit immutable paths: `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, and `frontend/src/components/ui/*`.",
-    "Use English for any user-facing text."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Only generate backend/migration.mo if a stable-state upgrade is required; avoid state schema changes if possible.",
+    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead."
   ],
   "nonGoals": [
-    "Do not add SMS/messaging, push notifications, or email-based calling workflows.",
-    "Do not add third-party authentication beyond Internet Identity.",
-    "Do not implement real-time WebSocket updates; keep the existing polling approach."
+    "Adding third-party map providers or real-time sockets/WebSockets for streaming location updates.",
+    "Implementing new authentication methods beyond Internet Identity.",
+    "Changing how ambulance devices collect GPS fixes (unless required to support the visibility fixes above)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

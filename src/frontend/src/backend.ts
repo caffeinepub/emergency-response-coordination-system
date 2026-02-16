@@ -139,6 +139,7 @@ export interface backendInterface {
     deleteAmbulanceLocation(ambulanceId: AmbulanceId): Promise<void>;
     getActiveSOSAlerts(): Promise<Array<SOSAlert>>;
     getAllAmbulanceContacts(): Promise<Array<AmbulanceContact>>;
+    getAllAmbulanceLocations(): Promise<Array<AmbulanceLocation>>;
     getAllLocations(): Promise<Array<AmbulanceLocation>>;
     getAllSOSAlerts(): Promise<Array<SOSAlert>>;
     getAmbulanceContactsInRadius(center: Coordinates, radius: number): Promise<Array<AmbulanceContact>>;
@@ -257,6 +258,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getAllAmbulanceContacts();
+            return result;
+        }
+    }
+    async getAllAmbulanceLocations(): Promise<Array<AmbulanceLocation>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllAmbulanceLocations();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllAmbulanceLocations();
             return result;
         }
     }

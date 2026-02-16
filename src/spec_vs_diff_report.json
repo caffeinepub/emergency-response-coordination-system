@@ -1,36 +1,58 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T13:24:35.647Z",
-  "summary": "Most requested functionality appears to be implemented (phoneNumber field added, frontend profile flow collects/validates phone, new police-side hook and UI wiring referenced). However, the diff evidence is insufficient to confirm the REQ-5 backend police-authorized combined radar+contact query exists, because the relevant backend function is not shown in the truncated backend/main.mo snippet.",
+  "generatedAt": "2026-02-12T15:02:04.751Z",
+  "summary": "Frontend PoliceInterface appears to switch to a new `useGetAllAmbulanceLocations` data source and adds client-side filters for offline and optional radius filtering. However, the diff summary does not provide evidence that the required police-authorized backend query that returns *all* ambulance locations is implemented (or that it traps for non-police/non-admin). Evidence for the offline labeling UI and the ambulanceId-based contact association is also not present in the provided truncated snippets.",
   "missing_requirements": [
     {
-      "id": "REQ-5",
-      "requirement": "Add a police-authorized backend query that returns ambulance locations in radius along with each ambulance's profile contact fields (name + phoneNumber), and rejects non-police/non-admin callers; return empty/absent contact fields safely when profile missing.",
-      "reason": "The diff shows frontend adding a new hook `useGetAmbulanceContactsInRadius` and police UI consuming it, but the truncated `backend/main.mo` excerpt does not show any new police-authorized query that returns combined location+contact data (nor its authorization checks / missing-profile behavior).",
+      "id": "REQ-1",
+      "requirement": "Add a police-authorized backend query that returns all current ambulance locations (not radius-limited) and have the police UI use it; backend must reject non-police/non-admin callers with an authorization trap consistent with existing patterns.",
+      "reason": "Frontend references a new `useGetAllAmbulanceLocations` hook and PoliceInterface states it fetches all ambulances, but the backend diff snippet does not show any new public query for “all ambulance locations” nor an authorization check/trap for that query. The backend snippet only shows helper functions `isPolice`/`isAmbulance` and profile queries; the relevant location query implementation is not evidenced in the truncated content.",
       "evidence": [
-        "backend/main.mo (truncated; no combined police radar+contact query shown)",
-        "frontend/src/hooks/useQueries.ts (truncated; references new combined query hook)",
-        "frontend/src/pages/PoliceInterface.tsx (uses useGetAmbulanceContactsInRadius)"
+        "frontend/src/pages/PoliceInterface.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Keep stale/paused ambulances visible and clearly label them as “Offline / Last update: Xs ago”, with a toggle to hide/show offline ambulances; empty state should only appear when nothing matches current filters.",
+      "reason": "The diff shows computation of `isOffline`/`ageSeconds` plus a `showOfflineAmbulances` toggle and filtering logic, but the provided truncated PoliceInterface snippet does not show any actual rendering of an offline label (“Offline / Last update: Xs ago”) on list items or map markers, nor the empty-state message logic tied to the toggle/filter settings.",
+      "evidence": [
+        "frontend/src/pages/PoliceInterface.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Fix incorrect ambulance-to-contact association by matching contacts by `ambulanceId` (principal) rather than array index; show fallback (e.g., “Unknown”) only for ambulances missing contact.",
+      "reason": "The truncated PoliceInterface snippet does not show contact rendering logic at all. While `useGetUserProfile(userId)` exists, the diff does not show code that maps contacts to ambulances by `ambulanceId` in both the list and map marker label. Additionally, backend `getUserProfile` in the snippet only permits self or admin access (no police access shown), which would prevent police from reliably fetching ambulance contact info unless additional backend authorization was added (not evidenced in the provided snippet).",
+      "evidence": [
+        "frontend/src/pages/PoliceInterface.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "backend/main.mo (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added a backend migration module and wired actor migration via `(with migration = Migration.run)`",
-      "reason": "BuildRequest constraints emphasize keeping the backend as a single Motoko actor in `backend/main.mo` with no additional backend services; adding `backend/migration.mo` and migration wiring is not explicitly requested by any REQ.",
+      "description": "Enhanced error-message parsing/translation for `saveCallerUserProfile` (phone validation and auth-specific user-facing errors).",
+      "reason": "REQ-1/2/3 are about police visibility of ambulances, offline display/toggle, and correct contact association. The diff adds additional UX logic for profile saving errors that is not requested by the BuildRequest.",
       "evidence": [
-        "backend/migration.mo (added)",
-        "backend/main.mo (imports Migration and uses `(with migration = Migration.run)`)"
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    },
+    {
+      "description": "Invalidating/refetching additional query key `allAmbulanceLocations` after updating ambulance location.",
+      "reason": "While related to the new all-ambulance-locations concept, the BuildRequest only requires adding a police-authorized backend query and wiring the police UI to use it; this specific cache invalidation behavior is an unrequested implementation detail not stated as a requirement.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.56,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/ProfileSetup.tsx",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/pages/PoliceInterface.tsx",
     "project_state.json"

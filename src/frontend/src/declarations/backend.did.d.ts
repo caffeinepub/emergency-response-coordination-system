@@ -50,6 +50,7 @@ export interface _SERVICE {
   'deleteAmbulanceLocation' : ActorMethod<[AmbulanceId], undefined>,
   'getActiveSOSAlerts' : ActorMethod<[], Array<SOSAlert>>,
   'getAllAmbulanceContacts' : ActorMethod<[], Array<AmbulanceContact>>,
+  'getAllAmbulanceLocations' : ActorMethod<[], Array<AmbulanceLocation>>,
   'getAllLocations' : ActorMethod<[], Array<AmbulanceLocation>>,
   'getAllSOSAlerts' : ActorMethod<[], Array<SOSAlert>>,
   'getAmbulanceContactsInRadius' : ActorMethod<

@@ -1,10 +1,12 @@
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useQueries';
+import { isValidPhoneNumber } from './utils/phoneValidation';
 import { Loader2 } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginPrompt from './components/LoginPrompt';
 import ProfileSetup from './components/ProfileSetup';
+import PhoneNumberCapture from './components/PhoneNumberCapture';
 import AmbulanceInterface from './pages/AmbulanceInterface';
 import PoliceInterface from './pages/PoliceInterface';
 
@@ -39,7 +41,7 @@ export default function App() {
     );
   }
 
-  // Show profile setup if authenticated but no profile
+  // Show profile setup if authenticated but no profile (new user)
   const showProfileSetup = isAuthenticated && isFetched && userProfile === null;
   if (showProfileSetup) {
     return (
@@ -53,7 +55,21 @@ export default function App() {
     );
   }
 
-  // Show appropriate interface based on role
+  // Show phone number capture ONLY for ambulance users with invalid phone
+  const showPhoneCapture = isAuthenticated && isFetched && userProfile !== null && userProfile !== undefined && userProfile.role === 'ambulance' && !isValidPhoneNumber(userProfile.phoneNumber);
+  if (showPhoneCapture) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1">
+          <PhoneNumberCapture />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show appropriate interface based on role (phone validation only blocks ambulance users)
   return (
     <div className="flex min-h-screen flex-col">
       <Header />

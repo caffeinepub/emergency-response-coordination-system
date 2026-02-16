@@ -1,70 +1,63 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Ambulance phone capture + police radar contact display and calling",
+  "title": "Police Command Center: show all ambulances, offline visibility, and correct contact association",
   "requirements": [
     {
-      "id": "REQ-6",
-      "summary": "Collect and validate a required 10-digit phone number during first-time profile setup and include it in profile saves.",
+      "id": "REQ-1",
+      "summary": "Update Police Command Center to fetch and display all ambulance locations (not radius-limited) and apply optional radius filtering as a client-side view filter.",
       "acceptanceCriteria": [
-        "`ProfileSetup` displays a required phone number input in addition to the existing name and role fields.",
-        "The phone number field only accepts digits (UI-level filtering is allowed) and submission is blocked unless it is exactly 10 digits.",
-        "If validation fails, an English error message is shown to the user (e.g., \"Phone number must be exactly 10 digits\").",
-        "On successful save, the app transitions as it does today (App routes user into the correct interface)."
+        "When logged in as a police user, the Police Command Center displays all ambulances that have a stored location in the backend (not only those within POLICE_RADIUS_KM).",
+        "Backend rejects the new “all ambulance locations” query for non-police/non-admin callers with an authorization trap consistent with existing patterns.",
+        "The police map shows ambulance markers for the returned ambulances and does not show an empty state solely due to radius filtering."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/ProfileSetup.tsx",
-          "operation": "modify",
-          "description": "Add a required phone number field to the profile setup form, with UI-level digits-only filtering and a hard check for exactly 10 digits before submission; include `phoneNumber` in the saved `UserProfile`; show a clear English inline error message when validation fails. Compose existing shadcn/ui inputs/alerts/buttons only (do not edit `frontend/src/components/ui/*`). Verify the component's usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Update `useSaveCallerUserProfile` error handling to preserve and surface clear backend validation trap messages (e.g., invalid phone) to the UI when safe, while still handling authorization failures gracefully; ensure the mutation accepts and passes through `phoneNumber` as part of `UserProfile`. (Selected component: authorization — handle auth/role-related trap errors gracefully per guidance; verify the component's usage instructions before implementing.)"
+          "description": "Add a police-oriented React Query hook that fetches all current ambulance locations (using the backend capability that returns all ambulance locations) and polls at LOCATION_UPDATE_INTERVAL. Ensure authorization failures are surfaced/handled similarly to existing patterns. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "operation": "modify",
+          "description": "Wire the Police UI to use the new 'all ambulance locations' hook as the source of truth, and implement an optional client-side radius view filter (default can remain based on POLICE_RADIUS_KM) without preventing map/list from showing ambulances outside the radius when the filter is disabled. Update the list header/empty-state copy so it reflects the current filter mode. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-7",
-      "summary": "Show ambulance name/phone/coordinates in the Police radar list and map labels, and provide a Call button using a tel: link when a valid number exists.",
+      "id": "REQ-2",
+      "summary": "Keep stale ambulances visible with an offline label and provide a toggle to hide/show offline ambulances across list and map.",
       "acceptanceCriteria": [
-        "For each nearby ambulance in the Police interface list, the UI displays: Name, Phone number, and Location (latitude/longitude), alongside the existing distance/last update information.",
-        "Each ambulance entry includes a visible \"Call\" button that uses a `tel:` link to dial the displayed phone number.",
-        "If a phone number is missing/invalid, the Call button is disabled or hidden and the UI displays an English fallback (e.g., \"No phone number on file\").",
-        "Ambulance markers shown on the tactical map include the ambulance name and/or phone in the popup/label when available (without breaking existing marker smoothing/in-place updates)."
+        "If an ambulance has not updated within the timeout window, it still appears in the list and on the map, and is visually marked as offline with a readable last-update age.",
+        "Police users can toggle “Show offline ambulances” on/off; turning it off hides those stale ambulances from both list and map.",
+        "The empty-state message (“No ambulances detected…”) only appears when there are truly no ambulances to show given the current toggle/filter settings."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Switch the radar rendering to use the combined ambulance radar dataset (location + contact fields) from the updated query hook; render Name, Phone number, and Coordinates (lat/lng) in each list entry while keeping existing distance/last-update UI; add a \"Call\" control using a `tel:` link when `phoneNumber` is exactly 10 digits, otherwise show an English fallback and disable/hide calling; update ambulance map marker `label`/popup text to include ambulance name and/or phone (and optionally coordinates) when available while keeping marker IDs stable to preserve smoothing/in-place updates. Verify the component's usage instructions before implementing."
+          "description": "Remove the hard filter that drops stale ambulance locations. Compute an 'isOffline' flag per ambulance based on last-update age; render offline styling and text like “Offline / Last update: Xs ago” in both the list item and marker label. Add a UI toggle state (default on) to show/hide offline ambulances and apply it consistently to both list and map marker generation. Ensure empty-state messaging only appears when no ambulances remain after applying current view toggles/filters. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-8",
-      "summary": "Add/extend React Query hooks and TypeScript types so Police fetches and renders combined radar data (ambulance location + contact fields) with unchanged polling behavior.",
+      "id": "REQ-3",
+      "summary": "Correctly associate ambulance contact details by ambulanceId rather than array index so contacts match the right marker and list item.",
       "acceptanceCriteria": [
-        "A new/updated hook in `frontend/src/hooks/useQueries.ts` fetches the combined police radar dataset and is used by `PoliceInterface` instead of (or in addition to) `useGetLocationsInRadius`.",
-        "Polling/refresh behavior remains consistent with the current live-tracking experience (no regression in update frequency).",
-        "TypeScript types are updated so the Police interface compiles cleanly with the new data shape."
+        "For a given ambulanceId, the same ambulanceId is used to retrieve and render that ambulance’s contact info in both the list and the map marker label.",
+        "Reordering of backend results (or differing order between location and contacts queries) does not cause contact information to appear under the wrong ambulance.",
+        "If no contact is available for an ambulanceId, the UI shows “Unknown” (or existing fallback) only for that specific ambulance."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/backend.d.ts",
-          "operation": "modify",
-          "description": "Extend frontend backend-actor TypeScript definitions to include the new police-authorized backend capability for fetching combined radar results (ambulance location + contact fields for the same ambulanceId). Add/adjust exported types needed for the combined result shape so the Police UI can compile cleanly against the new data."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Introduce a new React Query hook (or update an existing one) that fetches the combined police radar dataset via the new backend capability and polls using the same interval as the current live-tracking experience (reuse `LOCATION_UPDATE_INTERVAL`); export types for the combined item shape for UI use; keep existing hooks intact as needed for other pages. (Selected component: authorization — ensure query errors from police-only authorization are handled gracefully in UI flows; verify the component's usage instructions before implementing.)"
+          "description": "Add a police-side data hook that retrieves contact/profile details keyed by ambulanceId (principal), returning a lookup map (e.g., by stringified principal) so the UI can render the correct name/phone for each ambulance regardless of ordering. Prefer using the backend capability to fetch a specific user's profile by principal to ensure stable association. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Wire the Police interface to consume the new combined radar hook (replacing `useGetLocationsInRadius` for radar rendering), ensuring refresh/polling behavior remains consistent and the component compiles with updated types."
+          "description": "Replace index-based contact matching with ambulanceId-based lookup for both list rendering and map marker labels. Ensure missing profile/contact info only affects the corresponding ambulance (showing 'Unknown' fallback) and does not shift other ambulances' contact details. Verify the component's usage instructions before implementing."
         }
       ]
     }

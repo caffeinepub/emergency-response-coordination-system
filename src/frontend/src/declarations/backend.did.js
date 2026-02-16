@@ -63,6 +63,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(AmbulanceContact)],
       ['query'],
     ),
+  'getAllAmbulanceLocations' : IDL.Func(
+      [],
+      [IDL.Vec(AmbulanceLocation)],
+      ['query'],
+    ),
   'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),
   'getAllSOSAlerts' : IDL.Func([], [IDL.Vec(SOSAlert)], ['query']),
   'getAmbulanceContactsInRadius' : IDL.Func(
@@ -169,6 +174,11 @@ export const idlFactory = ({ IDL }) => {
     'getAllAmbulanceContacts' : IDL.Func(
         [],
         [IDL.Vec(AmbulanceContact)],
+        ['query'],
+      ),
+    'getAllAmbulanceLocations' : IDL.Func(
+        [],
+        [IDL.Vec(AmbulanceLocation)],
         ['query'],
       ),
     'getAllLocations' : IDL.Func([], [IDL.Vec(AmbulanceLocation)], ['query']),

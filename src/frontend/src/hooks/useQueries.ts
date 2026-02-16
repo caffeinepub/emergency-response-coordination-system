@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, Coordinates, AmbulanceLocation, SOSAlert, AmbulanceContact } from '../backend';
+import type { UserProfile, Coordinates, AmbulanceLocation, SOSAlert, AmbulanceContact, AmbulanceId } from '../backend';
 import { LOCATION_UPDATE_INTERVAL } from '../utils/locationRefresh';
+import { Principal } from '@dfinity/principal';
 
 // User Profile Queries
 export function useGetCallerUserProfile() {
@@ -63,6 +64,30 @@ export function useSaveCallerUserProfile() {
   });
 }
 
+// Fetch user profile by principal (for police to get ambulance contact info)
+export function useGetUserProfile(userId: Principal | null) {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<UserProfile | null>({
+    queryKey: ['userProfile', userId?.toString()],
+    queryFn: async () => {
+      if (!actor || !userId) return null;
+      try {
+        return await actor.getUserProfile(userId);
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Can only view your own profile')) {
+          console.error('Authorization error fetching user profile:', errorMessage);
+          return null;
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!userId,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+}
+
 // Ambulance Location Queries
 export function useUpdateAmbulanceLocation() {
   const { actor } = useActor();
@@ -75,6 +100,7 @@ export function useUpdateAmbulanceLocation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ambulanceLocations'] });
+      queryClient.invalidateQueries({ queryKey: ['allAmbulanceLocations'] });
     },
   });
 }
@@ -105,6 +131,31 @@ export function useGetLocationsInRadius(center: Coordinates | null, radius: numb
       return actor.getLocationsInRadius(center, radius);
     },
     enabled: !!actor && !actorFetching && !!center,
+    refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates
+    staleTime: 10000, // Consider data stale after 10 seconds
+  });
+}
+
+// Police query to get ALL ambulance locations (not radius-limited)
+export function useGetAllAmbulanceLocations() {
+  const { actor, isFetching: actorFetching } = useActor();
+
+  return useQuery<AmbulanceLocation[]>({
+    queryKey: ['allAmbulanceLocations'],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getAllAmbulanceLocations();
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only police')) {
+          console.error('Authorization error fetching all ambulance locations:', errorMessage);
+          return [];
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !actorFetching,
     refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates
     staleTime: 10000, // Consider data stale after 10 seconds
   });

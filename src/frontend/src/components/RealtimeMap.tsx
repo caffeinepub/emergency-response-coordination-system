@@ -99,11 +99,11 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
     };
   }, []);
 
-  // Update map center when it changes (with smoothing)
+  // Update map center when it changes (with threshold-based panning)
   useEffect(() => {
     if (!mapInstanceRef.current || !isMapReady || !currentCenterRef.current) return;
 
-    // Check if center update is significant enough
+    // Check if center update is significant enough to warrant panning
     if (shouldUpdateCenter(
       currentCenterRef.current.lat,
       currentCenterRef.current.lng,
@@ -146,7 +146,7 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
     markers.forEach((marker) => {
       const existingState = registry.get(marker.id);
 
-      // Apply smoothing to coordinates
+      // Apply smoothing to coordinates for display
       const previousSmoothing = smoothingState.get(marker.id);
       const smoothed = smoothCoordinate(marker.lat, marker.lng, previousSmoothing ?? null);
       smoothingState.set(marker.id, smoothed);

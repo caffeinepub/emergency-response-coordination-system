@@ -2,47 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-profile-setup-flow-shown-immediately-after-login-when-no-profile-exists-to-also-collect-the-user-s-phone-number-validating-it-as-exactly-10-digits-before-allowing-submission",
-      "featureTitle": "Update the profile setup flow (shown immediately after login when no profile exists) to also collect the user's phone number, validating it as exactly 10 digits before allowing submission.",
-      "files": [
-        "frontend/src/components/ProfileSetup.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-police-interface-radar-list-and-map-marker-labels-so-that-when-an-ambulance-is-visible-it-shows-ambulance-name-phone-number-and-current-coordinates-and-provide-a-call-button-that-initiates-a-direct-phone-call-to-that-number",
-      "featureTitle": "Update the Police interface radar list and map marker labels so that when an ambulance is visible, it shows: ambulance name, phone number, and current coordinates; and provide a \"Call\" button that initiates a direct phone call to that number.",
-      "files": [
-        "frontend/src/pages/PoliceInterface.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-7"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-extend-react-query-hooks-so-the-police-interface-fetches-the-combined-radar-data-ambulance-location-profile-contact-fields-from-the-new-backend-query-and-uses-it-for-rendering",
-      "featureTitle": "Add/extend React Query hooks so the Police interface fetches the combined radar data (ambulance location + profile contact fields) from the new backend query and uses it for rendering.",
+      "featureId": "feature-ensure-the-police-interface-reliably-shows-ambulances-on-the-map-and-in-the-list-even-when-they-are-outside-the-configured-radius-by-adding-a-police-authorized-backend-query-that-returns-all-current-ambulance-locations-and-wiring-the-police-ui-to-use-it-with-optional-radius-filtering-as-a-client-side-view-filter",
+      "featureTitle": "Ensure the police interface reliably shows ambulances on the map and in the list even when they are outside the configured radius, by adding a police-authorized backend query that returns all current ambulance locations and wiring the police UI to use it (with optional radius filtering as a client-side view filter).",
       "files": [
         "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/PoliceInterface.tsx"
@@ -56,7 +17,46 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-8"
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-police-side-visibility-of-stale-paused-ambulance-updates-do-not-hide-ambulances-purely-because-their-last-update-is-older-than-the-current-timeout-instead-keep-them-visible-and-clearly-label-them-as-offline-last-update-xs-ago-and-provide-a-ui-toggle-to-hide-show-offline-ambulances",
+      "featureTitle": "Improve police-side visibility of stale/paused ambulance updates: do not hide ambulances purely because their last update is older than the current timeout; instead, keep them visible and clearly label them as “Offline / Last update: Xs ago”, and provide a UI toggle to hide/show offline ambulances.",
+      "files": [
+        "frontend/src/pages/PoliceInterface.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-incorrect-ambulance-to-contact-association-in-the-police-interface-by-matching-ambulance-contacts-by-ambulanceid-principal-rather-than-by-array-index-so-the-displayed-contact-name-phone-corresponds-to-the-correct-ambulance-marker-and-list-item",
+      "featureTitle": "Fix incorrect ambulance-to-contact association in the police interface by matching ambulance contacts by ambulanceId (principal) rather than by array index, so the displayed contact name/phone corresponds to the correct ambulance marker and list item.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/PoliceInterface.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }
