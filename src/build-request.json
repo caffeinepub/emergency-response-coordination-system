@@ -1,108 +1,66 @@
 {
   "kind": "build_request",
-  "title": "Fix blank white screen on production load",
-  "priority": "high",
+  "title": "Fix profile loading error",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add comprehensive error logging to identify the root cause of the blank white screen in production. Log errors from React Query initialization, Internet Identity provider setup, actor creation, and any uncaught exceptions during app bootstrap.",
-      "target": "frontend",
+      "text": "Investigate and resolve the 'Profile Loading Error' that displays 'Failed to load your user profile. This might be a temporary network issue or a backend problem.' The error appears after authentication and prevents users from accessing the application.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-last"
+          "msg-user-error-report"
         ],
         "quotes": [
-          "bro im still getting the same blank white screen bro"
+          "Profile Loading Error",
+          "Failed to load your user profile. This might be a temporary network issue or a backend problem."
         ]
       },
       "acceptanceCriteria": [
-        "Console logs capture all initialization errors",
-        "Error details are visible in browser DevTools console",
-        "Logs distinguish between auth failures, network issues, and render errors"
+        "Users can successfully load their profile after authentication",
+        "Profile loading errors are handled gracefully with appropriate retry logic",
+        "Root cause of the profile loading failure is identified and fixed"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a loading fallback UI to frontend/src/main.tsx that displays while the app initializes, preventing a blank screen during bootstrap. Show a centered spinner or loading message.",
+      "text": "Add improved error handling and logging for profile loading operations in App.tsx to capture more diagnostic information about profile fetch failures, including network status, backend actor availability, and response details.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "bro im still getting the same blank white screen bro"
+          "msg-user-error-report"
         ]
       },
       "acceptanceCriteria": [
-        "Users see a loading indicator immediately on page load",
-        "Loading state is visible until React Query and Internet Identity providers are ready",
-        "Loading UI uses the app's theme colors"
+        "Console logs include detailed error information for profile loading failures",
+        "Error messages distinguish between network issues, authentication problems, and backend errors",
+        "Technical details section provides actionable debugging information"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Wrap the root App component in frontend/src/main.tsx with ErrorBoundary to catch and display any render-time errors that might cause a blank screen.",
-      "target": "frontend",
+      "text": "Verify that the backend actor's getUserProfile method is functioning correctly and returning proper responses for authenticated users, including edge cases where profiles may not exist or have incomplete data.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "bro im still getting the same blank white screen bro"
+          "msg-user-error-report"
         ]
       },
       "acceptanceCriteria": [
-        "ErrorBoundary catches all React rendering errors",
-        "CrashFallback is displayed when errors occur",
-        "Error details are logged to console"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add defensive null checks and error handling in frontend/src/App.tsx for cases where the actor, identity, or profile data fails to load. Display a user-friendly error message instead of crashing.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "bro im still getting the same blank white screen bro"
-        ]
-      },
-      "acceptanceCriteria": [
-        "App handles missing or failed actor creation gracefully",
-        "Clear error messages are shown when profile loading fails",
-        "Users can retry failed operations"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Verify that the Leaflet CDN script in frontend/index.html loads successfully by adding an onload handler and error fallback. Log any CDN loading failures.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "bro im still getting the same blank white screen bro"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Leaflet CDN load success/failure is logged",
-        "App displays an error if Leaflet fails to load",
-        "Map components handle missing Leaflet gracefully"
+        "getUserProfile returns valid profile data for existing users",
+        "Method handles missing profiles appropriately without throwing errors",
+        "Backend logs provide clear diagnostic information for profile retrieval operations"
       ]
     }
   ],
   "constraints": [
-    "Do not modify backend/main.mo",
-    "Preserve all existing authentication and role-based routing logic",
-    "Maintain compatibility with Internet Identity authentication flow"
+    "Do not modify authentication flow or Internet Identity integration",
+    "Preserve existing profile data structure and schema"
   ],
   "nonGoals": [
-    "Redesigning the UI or layout",
-    "Adding new features or functionality",
-    "Changing the map implementation or location tracking logic"
+    "Redesigning the profile loading UI",
+    "Adding new profile fields or features",
+    "Changing the overall application architecture"
   ],
   "imageRequirements": {
     "required": [],

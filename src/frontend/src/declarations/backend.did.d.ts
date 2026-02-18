@@ -44,6 +44,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'ambulanceLogout' : ActorMethod<[], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'deactivateSOS' : ActorMethod<[], undefined>,
   'deactivateSOSForAmbulance' : ActorMethod<[AmbulanceId], undefined>,

@@ -1,130 +1,52 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix blank white screen on production load",
+  "title": "Fix profile loading error",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add comprehensive error logging to identify the root cause of the blank white screen in production",
+      "summary": "Investigate and resolve the 'Profile Loading Error' that prevents users from accessing the application after authentication",
       "acceptanceCriteria": [
-        "Console logs capture all initialization errors",
-        "Error details are visible in browser DevTools console",
-        "Logs distinguish between auth failures, network issues, and render errors"
+        "Users can successfully load their profile after authentication",
+        "Profile loading errors are handled gracefully with appropriate retry logic",
+        "Root cause of the profile loading failure is identified and fixed"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/main.tsx",
-          "operation": "modify",
-          "description": "Add error logging for React Query client initialization failures, including onError callbacks in the QueryClient configuration to capture and log all query errors during bootstrap"
-        },
-        {
-          "path": "frontend/src/hooks/useInternetIdentity.ts",
-          "operation": "modify",
-          "description": "Add comprehensive console.error logging for Internet Identity provider initialization failures, AuthClient creation errors, and identity loading failures with detailed error messages"
-        },
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Add error logging for actor creation failures, including canister connection errors, identity validation failures, and any exceptions during actor initialization with context about the failure point"
-        },
-        {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add logging for uncaught exceptions during app bootstrap, profile loading errors, and role-based routing failures with timestamps and error context"
+          "description": "Fix the profile loading flow by ensuring proper sequencing between actor availability and profile fetch. Add defensive checks for actor state before calling getCallerUserProfile, implement exponential backoff retry logic for transient failures, and ensure the authorization component's profile fetch mechanism is correctly integrated with the React Query cache."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Review and enhance the useGetCallerUserProfile hook to properly handle the authorization component's profile loading patterns. Ensure the hook correctly waits for actor initialization before enabling the query, implements proper error handling for authorization traps, and returns loading states that prevent premature error displays. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add a loading fallback UI that displays while the app initializes, preventing a blank screen during bootstrap",
+      "summary": "Add improved error handling and logging for profile loading operations to capture diagnostic information about profile fetch failures",
       "acceptanceCriteria": [
-        "Users see a loading indicator immediately on page load",
-        "Loading state is visible until React Query and Internet Identity providers are ready",
-        "Loading UI uses the app's theme colors"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/main.tsx",
-          "operation": "modify",
-          "description": "Wrap the App component tree with React.Suspense using a loading fallback that displays a centered spinner with the app's theme colors during initialization of React Query and Internet Identity providers"
-        },
-        {
-          "path": "frontend/src/components/LoadingFallback.tsx",
-          "operation": "create",
-          "description": "Create a LoadingFallback component that displays a centered spinner using Tailwind theme colors with a loading message, ensuring it covers the full viewport and prevents blank screen display during app bootstrap"
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Wrap the root App component with ErrorBoundary to catch and display any render-time errors",
-      "acceptanceCriteria": [
-        "ErrorBoundary catches all React rendering errors",
-        "CrashFallback is displayed when errors occur",
-        "Error details are logged to console"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/main.tsx",
-          "operation": "modify",
-          "description": "Wrap the App component with the existing ErrorBoundary component, ensuring it catches all render-time errors and displays the CrashFallback UI with error details logged to console"
-        },
-        {
-          "path": "frontend/src/components/ErrorBoundary.tsx",
-          "operation": "modify",
-          "description": "Enhance ErrorBoundary to log caught errors to console.error with stack traces and component hierarchy information before displaying CrashFallback"
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add defensive null checks and error handling in App.tsx for cases where the actor, identity, or profile data fails to load",
-      "acceptanceCriteria": [
-        "App handles missing or failed actor creation gracefully",
-        "Clear error messages are shown when profile loading fails",
-        "Users can retry failed operations"
+        "Console logs include detailed error information for profile loading failures",
+        "Error messages distinguish between network issues, authentication problems, and backend errors",
+        "Technical details section provides actionable debugging information"
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add null checks for actor availability before rendering role-based UI, handle profile loading failures with user-friendly error messages, and provide retry buttons for failed operations instead of crashing"
+          "description": "Enhance the existing console logging in the profile loading section to include additional diagnostic context: actor initialization status, authentication state, network connectivity indicators, error type classification (network vs backend vs authorization), timestamp of failure, and retry attempt counts. Structure logs to clearly distinguish between transient and permanent failures."
         },
         {
           "path": "frontend/src/components/ErrorState.tsx",
-          "operation": "create",
-          "description": "Create an ErrorState component that displays user-friendly error messages with retry buttons for actor creation failures, profile loading errors, and network issues with proper error context"
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Verify that the Leaflet CDN script loads successfully by adding an onload handler and error fallback",
-      "acceptanceCriteria": [
-        "Leaflet CDN load success/failure is logged",
-        "App displays an error if Leaflet fails to load",
-        "Map components handle missing Leaflet gracefully"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Add onload and onerror event handlers to the Leaflet CDN script tag that log success/failure to console and set a window.leafletLoaded flag to track loading state"
+          "description": "Enhance the ErrorState component to display more granular error classifications for profile loading failures. Add specific messaging for authorization errors (trapped calls), network timeout issues, and backend unavailability. Include timestamp and session information in technical details to aid debugging."
         },
         {
-          "path": "frontend/src/components/RealtimeMap.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add defensive check for window.L availability before initializing the map, display an error message if Leaflet is not loaded, and handle missing Leaflet gracefully with a fallback UI showing a map loading error"
-        },
-        {
-          "path": "frontend/src/pages/AmbulanceInterface.tsx",
-          "operation": "modify",
-          "description": "Add check for Leaflet availability before rendering the RealtimeMap component and display an error message if Leaflet failed to load with instructions to refresh the page"
-        },
-        {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
-          "operation": "modify",
-          "description": "Add check for Leaflet availability before rendering the RealtimeMap component and display an error message if Leaflet failed to load with instructions to refresh the page"
+          "description": "Add comprehensive error logging in the useGetCallerUserProfile query function. Log the full error object, actor availability status, authentication principal, query retry count, and network request details. Ensure error logs are structured to help identify whether failures originate from authorization checks, network issues, or backend method execution."
         }
       ]
     }

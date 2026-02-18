@@ -146,6 +146,7 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
     // Remove markers that no longer exist
     for (const [id, state] of registry.entries()) {
       if (!currentMarkerIds.has(id)) {
+        console.log('[RealtimeMap] Removing marker:', id);
         markersLayerRef.current.removeLayer(state.leafletMarker);
         registry.delete(id);
         smoothingState.delete(id);
@@ -172,19 +173,14 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
         if (hasMarkerChanged(oldType, marker.type, oldLabel, marker.label)) {
           const newIcon = createLeafletIcon(window.L, marker.type, marker.label);
           leafletMarker.setIcon(newIcon);
-          
-          // Update popup if label changed
-          if (marker.label) {
-            leafletMarker.bindPopup(marker.label);
-          } else {
-            leafletMarker.unbindPopup();
-          }
+          existingState.type = marker.type;
+          existingState.label = marker.label;
+        }
 
-          registry.set(marker.id, {
-            leafletMarker,
-            type: marker.type,
-            label: marker.label,
-          });
+        // Update popup if label changed
+        if (marker.label && marker.label !== oldLabel) {
+          leafletMarker.bindPopup(marker.label);
+          existingState.label = marker.label;
         }
       } else {
         // Create new marker
@@ -204,66 +200,18 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
       }
     });
 
-    // Fit bounds only on initial load or composition change
-    if (compositionChanged && markers.length > 1) {
-      const bounds = window.L.latLngBounds(markers.map(m => [m.lat, m.lng]));
-      mapInstanceRef.current?.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    }
-
-    // Update previous marker IDs
+    // Update previous marker IDs for next comparison
     previousMarkerIdsRef.current = currentMarkerIds;
   }, [markers, isMapReady]);
 
-  // Check if Leaflet is loaded - render error if not
-  if (!window.L) {
-    console.error('[RealtimeMap] Leaflet (window.L) is not available');
+  if (mapError) {
     return (
       <Alert className="border-destructive bg-destructive/10">
         <AlertCircle className="h-4 w-4 text-destructive" />
-        <AlertDescription>
-          Map library failed to load. Please refresh the page. If the problem persists, check your internet connection.
-        </AlertDescription>
+        <AlertDescription>{mapError}</AlertDescription>
       </Alert>
     );
   }
 
-  return (
-    <div className={`relative ${className}`}>
-      {mapError && (
-        <Alert className="mb-4 border-destructive bg-destructive/10">
-          <AlertCircle className="h-4 w-4 text-destructive" />
-          <AlertDescription>
-            {mapError}{' '}
-            <a
-              href={`https://www.openstreetmap.org/?mlat=${center.lat}&mlon=${center.lng}#map=${zoom}/${center.lat}/${center.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              View on OpenStreetMap
-            </a>
-          </AlertDescription>
-        </Alert>
-      )}
-      <div
-        ref={mapContainerRef}
-        className="h-full w-full rounded-lg border border-border"
-        style={{ minHeight: '400px' }}
-      />
-      <style>{`
-        .custom-marker-icon {
-          background: none;
-          border: none;
-        }
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: .5;
-          }
-        }
-      `}</style>
-    </div>
-  );
+  return <div ref={mapContainerRef} className={`rounded-lg border ${className}`} />;
 }

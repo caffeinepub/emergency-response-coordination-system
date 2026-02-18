@@ -21,6 +21,20 @@ export default function ErrorState({
     window.location.reload();
   };
 
+  // Extract additional context if available
+  const errorContext = (error as any)?.context;
+  const originalError = (error as any)?.originalError;
+  const errorType = (error as any)?.errorType;
+
+  // Classify error type for better messaging
+  const isNetworkError = error?.message?.includes('network') || error?.message?.includes('fetch');
+  const isAuthError = 
+    error?.message?.includes('Unauthorized') || 
+    error?.message?.includes('Anonymous') ||
+    error?.message?.includes('permission') ||
+    errorType === 'AUTHORIZATION_ERROR';
+  const isBackendError = error?.message?.includes('Actor') || error?.message?.includes('canister');
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
       <div className="max-w-md w-full space-y-4">
@@ -30,6 +44,23 @@ export default function ErrorState({
             <div className="space-y-2">
               <p className="font-semibold">{title}</p>
               <p className="text-sm">{message}</p>
+              
+              {/* Error classification hints */}
+              {isNetworkError && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 This appears to be a network connectivity issue. Check your internet connection.
+                </p>
+              )}
+              {isAuthError && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 This appears to be an authorization issue. You may need to set up your profile or log in again.
+                </p>
+              )}
+              {isBackendError && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 This appears to be a backend connectivity issue. The service may be temporarily unavailable.
+                </p>
+              )}
             </div>
           </AlertDescription>
         </Alert>
@@ -39,10 +70,49 @@ export default function ErrorState({
             <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
               Technical details
             </summary>
-            <pre className="mt-2 text-xs bg-muted p-3 rounded overflow-auto max-h-40">
-              {error.message}
-              {error.stack && `\n\n${error.stack}`}
-            </pre>
+            <div className="mt-2 space-y-3">
+              <div className="text-xs bg-muted p-3 rounded">
+                <div className="font-semibold mb-1">Error Message:</div>
+                <div className="text-destructive">{error.message}</div>
+              </div>
+
+              {errorType && (
+                <div className="text-xs bg-muted p-3 rounded">
+                  <div className="font-semibold mb-1">Error Type:</div>
+                  <div className="font-mono">{errorType}</div>
+                </div>
+              )}
+
+              {errorContext && (
+                <div className="text-xs bg-muted p-3 rounded">
+                  <div className="font-semibold mb-1">Context:</div>
+                  <pre className="overflow-auto max-h-32 text-[10px]">
+                    {JSON.stringify(errorContext, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {originalError && (
+                <div className="text-xs bg-muted p-3 rounded">
+                  <div className="font-semibold mb-1">Original Error:</div>
+                  <div className="text-destructive">{String(originalError)}</div>
+                </div>
+              )}
+
+              {error.stack && (
+                <div className="text-xs bg-muted p-3 rounded">
+                  <div className="font-semibold mb-1">Stack Trace:</div>
+                  <pre className="overflow-auto max-h-40 text-[10px]">
+                    {error.stack}
+                  </pre>
+                </div>
+              )}
+
+              <div className="text-xs bg-muted p-3 rounded">
+                <div className="font-semibold mb-1">Timestamp:</div>
+                <div>{new Date().toISOString()}</div>
+              </div>
+            </div>
           </details>
         )}
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useGetAllAmbulanceLocations, useGetActiveSOSAlerts, useGetUserProfile } from '../hooks/useQueries';
+import { useState, useEffect, useRef } from 'react';
+import { useGetAllAmbulanceLocations, useGetActiveSOSAlerts, useGetUserProfile, useUpdatePoliceLocation } from '../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
@@ -7,9 +7,10 @@ import { Label } from '../components/ui/label';
 import { AlertCircle, Phone, MapPin, Navigation2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import RealtimeMap, { MapMarker } from '../components/RealtimeMap';
-import type { AmbulanceLocation, SOSAlert } from '../backend';
-import { formatDistance, formatRadius } from '../utils/locationRefresh';
+import type { AmbulanceLocation, SOSAlert, Coordinates } from '../backend';
+import { formatDistance, formatRadius, LOCATION_UPDATE_INTERVAL } from '../utils/locationRefresh';
 import { buildDirectionsUrl } from '../utils/mapsDirections';
+import { processBackendUpdate, updateBackendState, BackendUpdateState, GPS_CONFIG } from '../utils/locationSmoothing';
 
 const OFFLINE_THRESHOLD_MS = 60000; // 1 minute
 
@@ -18,31 +19,78 @@ export default function PoliceInterface() {
   
   const [showOffline, setShowOffline] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [displayLocation, setDisplayLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<string>('Acquiring GPS...');
+  const backendStateRef = useRef<BackendUpdateState | null>(null);
+  const locationUpdateTimerRef = useRef<number | null>(null);
 
   const { data: allAmbulances = [], isLoading: ambulancesLoading } = useGetAllAmbulanceLocations();
   const { data: sosAlerts = [], isLoading: alertsLoading } = useGetActiveSOSAlerts();
+  const updatePoliceLocation = useUpdatePoliceLocation();
 
-  // Get police officer's location
+  // Get police officer's location with GPS smoothing and accuracy filtering
   useEffect(() => {
     console.log('[PoliceInterface] Setting up geolocation watch');
     if (!navigator.geolocation) {
       console.error('[PoliceInterface] Geolocation not supported');
+      setGpsStatus('Not supported');
       return;
     }
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        console.log('[PoliceInterface] GPS position update:', {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        const newLat = position.coords.latitude;
+        const newLng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        console.log('[PoliceInterface] GPS position update:', { newLat, newLng, accuracy });
+
+        // Always update display location for map
+        setDisplayLocation({ lat: newLat, lng: newLng });
+
+        // Process for backend updates with filtering and smoothing
+        const result = processBackendUpdate(
+          newLat,
+          newLng,
+          accuracy,
+          backendStateRef.current
+        );
+
+        if (result === null) {
+          // Fix rejected due to poor accuracy or outlier
+          if (accuracy !== undefined && accuracy > GPS_CONFIG.MAX_ACCURACY_METERS) {
+            setGpsStatus(`GPS accuracy poor (±${Math.round(accuracy)}m)`);
+          } else {
+            setGpsStatus('Filtering GPS outlier...');
+          }
+          return;
+        }
+
+        // Update backend state
+        backendStateRef.current = updateBackendState(
+          newLat,
+          newLng,
+          result.coords.latitude,
+          result.coords.longitude,
+          backendStateRef.current
+        );
+
+        // Update location for backend updates and distance calculations
         setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: result.coords.latitude,
+          lng: result.coords.longitude,
         });
+
+        // Update status
+        if (accuracy !== undefined) {
+          setGpsStatus(`GPS active (±${Math.round(accuracy)}m)`);
+        } else {
+          setGpsStatus('GPS active');
+        }
       },
       (error) => {
         console.error('[PoliceInterface] Geolocation error:', error);
+        setGpsStatus('GPS error');
       },
       {
         enableHighAccuracy: true,
@@ -56,6 +104,41 @@ export default function PoliceInterface() {
       navigator.geolocation.clearWatch(watchId);
     };
   }, []);
+
+  // Send police location updates to backend every 12 seconds (same as ambulance)
+  useEffect(() => {
+    if (!userLocation) return;
+
+    console.log('[PoliceInterface] Setting up location update interval');
+    
+    // Convert to backend Coordinates format
+    const coordinates: Coordinates = {
+      latitude: userLocation.lat,
+      longitude: userLocation.lng,
+    };
+
+    // Send initial update immediately
+    updatePoliceLocation.mutate(coordinates);
+
+    // Set up interval for continuous updates
+    locationUpdateTimerRef.current = window.setInterval(() => {
+      if (userLocation) {
+        console.log('[PoliceInterface] Sending location update to backend');
+        const coords: Coordinates = {
+          latitude: userLocation.lat,
+          longitude: userLocation.lng,
+        };
+        updatePoliceLocation.mutate(coords);
+      }
+    }, LOCATION_UPDATE_INTERVAL);
+
+    return () => {
+      if (locationUpdateTimerRef.current) {
+        console.log('[PoliceInterface] Clearing location update interval');
+        clearInterval(locationUpdateTimerRef.current);
+      }
+    };
+  }, [userLocation?.lat, userLocation?.lng]);
 
   // Filter ambulances based on online/offline status
   const now = Date.now();
@@ -86,19 +169,19 @@ export default function PoliceInterface() {
     };
   });
 
-  // Add police location marker if available
-  if (userLocation) {
+  // Add police location marker if available (use display location for map)
+  if (displayLocation) {
     mapMarkers.push({
       id: 'police-self',
-      lat: userLocation.lat,
-      lng: userLocation.lng,
+      lat: displayLocation.lat,
+      lng: displayLocation.lng,
       type: 'police',
       label: 'Your Location (Police)',
     });
   }
 
-  // Calculate map center
-  const mapCenter = userLocation || (displayedAmbulances.length > 0
+  // Calculate map center - prefer display location, then first ambulance, then default
+  const mapCenter = displayLocation || (displayedAmbulances.length > 0
     ? {
         lat: displayedAmbulances[0].coordinates.latitude,
         lng: displayedAmbulances[0].coordinates.longitude,
@@ -132,6 +215,13 @@ export default function PoliceInterface() {
             <CardDescription>Monitor all ambulances and respond to SOS alerts</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* GPS Status */}
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant={gpsStatus.includes('active') ? 'default' : 'secondary'}>
+                {gpsStatus}
+              </Badge>
+            </div>
+
             {/* Controls */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
@@ -149,18 +239,35 @@ export default function PoliceInterface() {
               </div>
             </div>
 
-            {/* Map */}
-            {displayedAmbulances.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">Live Map</h3>
+            {/* Map - Always show, even when no ambulances */}
+            <div className="space-y-2">
+              <h3 className="font-semibold">Live Map</h3>
+              <div className="relative">
                 <RealtimeMap
                   center={mapCenter}
                   markers={mapMarkers}
-                  zoom={13}
+                  zoom={displayedAmbulances.length > 0 ? 13 : 2}
                   className="h-[500px]"
                 />
+                {/* Overlay message when no ambulances are online */}
+                {displayedAmbulances.length === 0 && !ambulancesLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-background/90 backdrop-blur-sm border rounded-lg px-6 py-4 shadow-lg">
+                      <p className="text-center text-muted-foreground font-medium">
+                        {showOffline
+                          ? 'No ambulances in the system yet'
+                          : 'No ambulances currently online'}
+                      </p>
+                      {!showOffline && allAmbulances.length > 0 && (
+                        <p className="text-center text-sm text-muted-foreground mt-1">
+                          Toggle "Show offline ambulances" to see all
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Loading State */}
             {(ambulancesLoading || alertsLoading) && (
@@ -169,7 +276,7 @@ export default function PoliceInterface() {
               </div>
             )}
 
-            {/* No Ambulances */}
+            {/* No Ambulances Alert (below map) */}
             {!ambulancesLoading && displayedAmbulances.length === 0 && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />

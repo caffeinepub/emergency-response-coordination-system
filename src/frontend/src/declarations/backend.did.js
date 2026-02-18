@@ -53,6 +53,7 @@ export const PoliceLocation = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'ambulanceLogout' : IDL.Func([], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'deactivateSOS' : IDL.Func([], [], []),
   'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),
@@ -166,6 +167,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'ambulanceLogout' : IDL.Func([], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'deactivateSOS' : IDL.Func([], [], []),
     'deactivateSOSForAmbulance' : IDL.Func([AmbulanceId], [], []),

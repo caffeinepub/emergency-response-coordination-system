@@ -50,6 +50,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    ambulanceLogout(): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deactivateSOS(): Promise<void>;
     deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;

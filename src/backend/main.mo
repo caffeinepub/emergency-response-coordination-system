@@ -9,6 +9,7 @@ import Float "mo:core/Float";
 import List "mo:core/List";
 import Int "mo:core/Int";
 import Char "mo:core/Char";
+import Timer "mo:core/Timer";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
@@ -58,13 +59,17 @@ actor {
     phoneNumber : Text;
   };
 
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
   let userProfiles = Map.empty<Principal, UserProfile>();
   let ambulanceLocations = Map.empty<AmbulanceId, AmbulanceLocation>();
   let policeLocations = Map.empty<PoliceId, PoliceLocation>();
   let sosAlerts = Map.empty<AmbulanceId, SOSAlert>();
 
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
+  // Track last heartbeat time for each ambulance
+  let ambulanceHeartbeat = Map.empty<AmbulanceId, Time.Time>();
+  let HEARTBEAT_TIMEOUT = 900_000_000_000; // 15 minutes in nanoseconds
 
   // Helper function to check if caller is ambulance
   func isAmbulance(caller : Principal) : Bool {
@@ -108,11 +113,12 @@ actor {
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can fetch profiles");
+      Runtime.trap("Unauthorized: Only users can view profiles");
     };
     userProfiles.get(caller);
   };
 
+  // Modified getUserProfile to explicitly return null for non-existent users only
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile");
@@ -129,6 +135,7 @@ actor {
 
     switch (userProfiles.get(caller)) {
       case (?existingProfile) {
+        // User exists - update name and phone but preserve role
         let updatedProfile : UserProfile = {
           name = profile.name;
           phoneNumber = profile.phoneNumber;
@@ -137,7 +144,8 @@ actor {
         userProfiles.add(caller, updatedProfile);
       };
       case (null) {
-        userProfiles.add(caller, profile);
+        // New user - cannot set their own role, must be set by admin
+        Runtime.trap("Unauthorized: New users must have their profile created by an admin");
       };
     };
   };
@@ -163,7 +171,7 @@ actor {
     };
   };
 
-  // Ambulance Location Management
+  // Ambulance Location Management with Heartbeat
   public shared ({ caller }) func updateAmbulanceLocation(coordinates : Coordinates) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can update location");
@@ -178,6 +186,37 @@ actor {
       timestamp = Time.now();
     };
     ambulanceLocations.add(caller, location);
+    ambulanceHeartbeat.add(caller, Time.now());
+  };
+
+  // Ambulance logout - immediately removes availability
+  public shared ({ caller }) func ambulanceLogout() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can logout");
+    };
+    if (not isAmbulance(caller)) {
+      Runtime.trap("Unauthorized: Only ambulance users can logout");
+    };
+
+    // Remove heartbeat to immediately mark as unavailable
+    ambulanceHeartbeat.remove(caller);
+    
+    // Optionally deactivate any active SOS alerts
+    switch (sosAlerts.get(caller)) {
+      case (?alert) {
+        if (alert.active) {
+          let updatedAlert : SOSAlert = {
+            ambulanceId = alert.ambulanceId;
+            coordinates = alert.coordinates;
+            timestamp = alert.timestamp;
+            active = false;
+            targetPolice = alert.targetPolice;
+          };
+          sosAlerts.add(caller, updatedAlert);
+        };
+      };
+      case (null) { };
+    };
   };
 
   public query ({ caller }) func getAmbulanceLocation(ambulanceId : AmbulanceId) : async ?AmbulanceLocation {
@@ -212,35 +251,51 @@ actor {
       Runtime.trap("Unauthorized: Only users can view police locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can view police locations");
+      Runtime.trap("Unauthorized: Only police and admins can view police locations");
     };
     policeLocations.get(policeId);
   };
 
-  // New function for police to get all ambulance locations
+  // New function for police to get all ambulance locations with filtering based on heartbeat
   public query ({ caller }) func getAllAmbulanceLocations() : async [AmbulanceLocation] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view ambulance locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can view all ambulance locations");
+      Runtime.trap("Unauthorized: Only police and admins can view all ambulance locations");
     };
-    let allLocations = ambulanceLocations.toArray();
-    allLocations.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
+    let currentTime = Time.now();
+    let filteredLocations = ambulanceLocations.toArray().filter(
+      func((ambulanceId, location)) {
+        switch (ambulanceHeartbeat.get(ambulanceId)) {
+          case (?heartbeatTime) {
+            currentTime - heartbeatTime <= HEARTBEAT_TIMEOUT;
+          };
+          case (null) { false };
+        };
+      }
+    );
+    filteredLocations.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
   };
 
-  // Police queries for nearby ambulances
+  // Police queries for nearby ambulances with heartbeat filtering
   public query ({ caller }) func getLocationsInRadius(center : Coordinates, radius : Float) : async [AmbulanceLocation] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can query locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can query locations in radius");
+      Runtime.trap("Unauthorized: Only police and admins can query locations in radius");
     };
 
+    let currentTime = Time.now();
     let filtered = ambulanceLocations.toArray().filter(
-      func((_, location)) {
-        calculateDistance(center, location.coordinates) <= radius;
+      func((ambulanceId, location)) {
+        switch (ambulanceHeartbeat.get(ambulanceId)) {
+          case (?heartbeatTime) {
+            currentTime - heartbeatTime <= HEARTBEAT_TIMEOUT and calculateDistance(center, location.coordinates) <= radius;
+          };
+          case (null) { false };
+        };
       }
     );
     filtered.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
@@ -251,12 +306,18 @@ actor {
       Runtime.trap("Unauthorized: Only users can query locations");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can query locations in radius");
+      Runtime.trap("Unauthorized: Only police and admins can query sorted locations");
     };
 
+    let currentTime = Time.now();
     let locationsInRadius = ambulanceLocations.toArray().filter(
-      func((_, location)) {
-        calculateDistance(center, location.coordinates) <= radius;
+      func((ambulanceId, location)) {
+        switch (ambulanceHeartbeat.get(ambulanceId)) {
+          case (?heartbeatTime) {
+            currentTime - heartbeatTime <= HEARTBEAT_TIMEOUT and calculateDistance(center, location.coordinates) <= radius;
+          };
+          case (null) { false };
+        };
       }
     );
 
@@ -271,18 +332,24 @@ actor {
     sorted.map<(AmbulanceId, AmbulanceLocation), AmbulanceLocation>(func((_, loc)) { loc });
   };
 
-  // Police query for ambulance contacts in radius
+  // Police query for ambulance contacts in radius with heartbeat filtering
   public query ({ caller }) func getAmbulanceContactsInRadius(center : Coordinates, radius : Float) : async [AmbulanceContact] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can query ambulance contacts");
+      Runtime.trap("Unauthorized: Only users can query contacts");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can query ambulance contacts");
+      Runtime.trap("Unauthorized: Only police and admins can query ambulance contacts");
     };
 
+    let currentTime = Time.now();
     let filteredLocations = ambulanceLocations.toArray().filter(
-      func((_, location)) {
-        calculateDistance(center, location.coordinates) <= radius;
+      func((ambulanceId, location)) {
+        switch (ambulanceHeartbeat.get(ambulanceId)) {
+          case (?heartbeatTime) {
+            currentTime - heartbeatTime <= HEARTBEAT_TIMEOUT and calculateDistance(center, location.coordinates) <= radius;
+          };
+          case (null) { false };
+        };
       }
     );
 
@@ -417,7 +484,7 @@ actor {
     };
 
     if (not isPolice(caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can view SOS alerts");
+      Runtime.trap("Unauthorized: Only police and admins can view active SOS alerts");
     };
 
     let activeAlertsForCaller = sosAlerts.toArray().filter(
@@ -440,12 +507,12 @@ actor {
         };
 
         if (not isPolice(caller)) {
-          Runtime.trap("Unauthorized: Only police or admin can view SOS alerts");
+          Runtime.trap("Unauthorized: Only police and admins can view SOS alerts");
         };
 
         let isTargetPolice = alert.targetPolice.any(func(id) { id == caller });
         if (not isTargetPolice) {
-          return null;
+          Runtime.trap("Unauthorized: Can only view SOS alerts targeted to you");
         };
         ?alert;
       };
@@ -459,6 +526,7 @@ actor {
       Runtime.trap("Unauthorized: Only admins can delete locations");
     };
     ambulanceLocations.remove(ambulanceId);
+    ambulanceHeartbeat.remove(ambulanceId);
   };
 
   public query ({ caller }) func getAllLocations() : async [AmbulanceLocation] {
@@ -483,7 +551,7 @@ actor {
 
   public query ({ caller }) func getAllAmbulanceContacts() : async [AmbulanceContact] {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view ambulance contacts");
+      Runtime.trap("Unauthorized: Only admins can view all ambulance contacts");
     };
     let profiles = userProfiles.toArray();
     profiles.map<(Principal, UserProfile), AmbulanceContact>(
@@ -501,12 +569,18 @@ actor {
       Runtime.trap("Unauthorized: Only users can query location counts");
     };
     if (not isPolice(caller) and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only police or admin can query location counts");
+      Runtime.trap("Unauthorized: Only police and admins can query location counts");
     };
 
+    let currentTime = Time.now();
     let locationsInRadius = ambulanceLocations.toArray().filter(
-      func((_, location)) {
-        calculateDistance(center, location.coordinates) <= radius;
+      func((ambulanceId, location)) {
+        switch (ambulanceHeartbeat.get(ambulanceId)) {
+          case (?heartbeatTime) {
+            currentTime - heartbeatTime <= HEARTBEAT_TIMEOUT and calculateDistance(center, location.coordinates) <= radius;
+          };
+          case (null) { false };
+        };
       }
     );
     locationsInRadius.size();
@@ -520,4 +594,3 @@ actor {
     allAlerts.map<(AmbulanceId, SOSAlert), SOSAlert>(func((_, alert)) { alert });
   };
 };
-

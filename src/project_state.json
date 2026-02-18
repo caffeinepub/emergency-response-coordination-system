@@ -3,54 +3,37 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "Blank white screen appears when app loads in production"
-  ],
+  "known_issues": [],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-comprehensive-error-logging-to-identify-the-root-cause-of-the-blank-white-screen-in-production-log-errors-from-react-query-initialization-internet-identity-provider-setup-actor-creation-and-any-uncaught-exceptions-during-app-bootstrap",
-      "title": "Add comprehensive error logging to identify the root cause of the blank white screen in production. Log errors from React Query initialization, Internet Identity provider setup, actor creation, and any uncaught exceptions during app bootstrap.",
+      "id": "feature-investigate-and-resolve-the-profile-loading-error-that-displays-failed-to-load-your-user-profile-this-might-be-a-temporary-network-issue-or-a-backend-problem-the-error-appears-after-authentication-and-prevents-users-from-accessing-the-application",
+      "title": "Investigate and resolve the 'Profile Loading Error' that displays 'Failed to load your user profile. This might be a temporary network issue or a backend problem.' The error appears after authentication and prevents users from accessing the application.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-loading-fallback-ui-to-frontend-src-main-tsx-that-displays-while-the-app-initializes-preventing-a-blank-screen-during-bootstrap-show-a-centered-spinner-or-loading-message",
-      "title": "Add a loading fallback UI to frontend/src/main.tsx that displays while the app initializes, preventing a blank screen during bootstrap. Show a centered spinner or loading message.",
+      "id": "feature-add-improved-error-handling-and-logging-for-profile-loading-operations-in-app-tsx-to-capture-more-diagnostic-information-about-profile-fetch-failures-including-network-status-backend-actor-availability-and-response-details",
+      "title": "Add improved error handling and logging for profile loading operations in App.tsx to capture more diagnostic information about profile fetch failures, including network status, backend actor availability, and response details.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
-    },
+    }
+  ],
+  "new_feature_requests": [
     {
-      "id": "feature-wrap-the-root-app-component-in-frontend-src-main-tsx-with-errorboundary-to-catch-and-display-any-render-time-errors-that-might-cause-a-blank-screen",
-      "title": "Wrap the root App component in frontend/src/main.tsx with ErrorBoundary to catch and display any render-time errors that might cause a blank screen.",
+      "id": "AR-3",
+      "summary": "Verify that the backend actor's getUserProfile method is functioning correctly and returning proper responses for authenticated users, including edge cases where profiles may not exist or have incomplete data.",
       "reqIds": [
         "REQ-3"
       ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-defensive-null-checks-and-error-handling-in-frontend-src-app-tsx-for-cases-where-the-actor-identity-or-profile-data-fails-to-load-display-a-user-friendly-error-message-instead-of-crashing",
-      "title": "Add defensive null checks and error handling in frontend/src/App.tsx for cases where the actor, identity, or profile data fails to load. Display a user-friendly error message instead of crashing.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-verify-that-the-leaflet-cdn-script-in-frontend-index-html-loads-successfully-by-adding-an-onload-handler-and-error-fallback-log-any-cdn-loading-failures",
-      "title": "Verify that the Leaflet CDN script in frontend/index.html loads successfully by adding an onload handler and error fallback. Log any CDN loading failures.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
+      "status": "pending"
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix blank white screen on production load",
+  "projectName": "Fix profile loading error",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

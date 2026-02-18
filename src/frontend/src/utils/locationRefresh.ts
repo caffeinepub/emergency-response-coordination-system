@@ -1,5 +1,6 @@
 // Shared constants for coordinate refresh timing and police radius
 export const LOCATION_UPDATE_INTERVAL = 12000; // 12 seconds
+export const POLICE_REFRESH_INTERVAL = 5000; // 5 seconds - faster polling for police interface
 export const POLICE_RADIUS_KM = 0.05; // 50 meters (0.05 km)
 
 /**

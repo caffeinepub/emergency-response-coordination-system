@@ -133,6 +133,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    ambulanceLogout(): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     deactivateSOS(): Promise<void>;
     deactivateSOSForAmbulance(ambulanceId: AmbulanceId): Promise<void>;
@@ -174,6 +175,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            return result;
+        }
+    }
+    async ambulanceLogout(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.ambulanceLogout();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.ambulanceLogout();
             return result;
         }
     }
