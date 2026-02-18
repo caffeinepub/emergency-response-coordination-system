@@ -1,85 +1,111 @@
 {
   "kind": "build_request",
-  "title": "Fix police interface to reliably display accurate ambulance locations",
+  "title": "Fix blank white screen on production load",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the police interface reliably shows ambulances on the map and in the list even when they are outside the configured radius, by adding a police-authorized backend query that returns all current ambulance locations and wiring the police UI to use it (with optional radius filtering as a client-side view filter).",
-      "target": "both",
+      "text": "Add comprehensive error logging to identify the root cause of the blank white screen in production. Log errors from React Query initialization, Internet Identity provider setup, actor creation, and any uncaught exceptions during app bootstrap.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-last"
         ],
         "quotes": [
-          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
+          "bro im still getting the same blank white screen bro"
         ]
       },
       "acceptanceCriteria": [
-        "When logged in as a police user, the Police Command Center displays all ambulances that have a stored location in the backend (not only those within POLICE_RADIUS_KM).",
-        "Backend rejects the new “all ambulance locations” query for non-police/non-admin callers with an authorization trap consistent with existing patterns.",
-        "The police map shows ambulance markers for the returned ambulances and does not show an empty state solely due to radius filtering."
+        "Console logs capture all initialization errors",
+        "Error details are visible in browser DevTools console",
+        "Logs distinguish between auth failures, network issues, and render errors"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Improve police-side visibility of stale/paused ambulance updates: do not hide ambulances purely because their last update is older than the current timeout; instead, keep them visible and clearly label them as “Offline / Last update: Xs ago”, and provide a UI toggle to hide/show offline ambulances.",
+      "text": "Add a loading fallback UI to frontend/src/main.tsx that displays while the app initializes, preventing a blank screen during bootstrap. Show a centered spinner or loading message.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-last"
         ],
         "quotes": [
-          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
+          "bro im still getting the same blank white screen bro"
         ]
       },
       "acceptanceCriteria": [
-        "If an ambulance has not updated within the timeout window, it still appears in the list and on the map, and is visually marked as offline with a readable last-update age.",
-        "Police users can toggle “Show offline ambulances” on/off; turning it off hides those stale ambulances from both list and map.",
-        "The empty-state message (“No ambulances detected…”) only appears when there are truly no ambulances to show given the current toggle/filter settings."
+        "Users see a loading indicator immediately on page load",
+        "Loading state is visible until React Query and Internet Identity providers are ready",
+        "Loading UI uses the app's theme colors"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Fix incorrect ambulance-to-contact association in the police interface by matching ambulance contacts by ambulanceId (principal) rather than by array index, so the displayed contact name/phone corresponds to the correct ambulance marker and list item.",
+      "text": "Wrap the root App component in frontend/src/main.tsx with ErrorBoundary to catch and display any render-time errors that might cause a blank screen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-last"
         ],
         "quotes": [
-          "bro in the police interface its hard to find the accurate ambulance's location and this is creating a issue by not showing the ambulance in the police's interface"
+          "bro im still getting the same blank white screen bro"
         ]
       },
       "acceptanceCriteria": [
-        "For a given ambulanceId, the same ambulanceId is used to retrieve and render that ambulance’s contact info in both the list and the map marker label.",
-        "Reordering of backend results (or differing order between location and contacts queries) does not cause contact information to appear under the wrong ambulance.",
-        "If no contact is available for an ambulanceId, the UI shows “Unknown” (or existing fallback) only for that specific ambulance."
+        "ErrorBoundary catches all React rendering errors",
+        "CrashFallback is displayed when errors occur",
+        "Error details are logged to console"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add defensive null checks and error handling in frontend/src/App.tsx for cases where the actor, identity, or profile data fails to load. Display a user-friendly error message instead of crashing.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "bro im still getting the same blank white screen bro"
+        ]
+      },
+      "acceptanceCriteria": [
+        "App handles missing or failed actor creation gracefully",
+        "Clear error messages are shown when profile loading fails",
+        "Users can retry failed operations"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Verify that the Leaflet CDN script in frontend/index.html loads successfully by adding an onload handler and error fallback. Log any CDN loading failures.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "bro im still getting the same blank white screen bro"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Leaflet CDN load success/failure is logged",
+        "App displays an error if Leaflet fails to load",
+        "Map components handle missing Leaflet gracefully"
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Only generate backend/migration.mo if a stable-state upgrade is required; avoid state schema changes if possible.",
-    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead."
+    "Do not modify backend/main.mo",
+    "Preserve all existing authentication and role-based routing logic",
+    "Maintain compatibility with Internet Identity authentication flow"
   ],
   "nonGoals": [
-    "Adding third-party map providers or real-time sockets/WebSockets for streaming location updates.",
-    "Implementing new authentication methods beyond Internet Identity.",
-    "Changing how ambulance devices collect GPS fixes (unless required to support the visibility fixes above)."
+    "Redesigning the UI or layout",
+    "Adding new features or functionality",
+    "Changing the map implementation or location tracking logic"
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

@@ -15,8 +15,15 @@ export default function Header() {
   const isAuthenticated = !!identity;
 
   const handleLogout = async () => {
-    await clear();
-    queryClient.clear();
+    try {
+      await clear();
+      // Clear all cached data after logout
+      queryClient.clear();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force clear even if logout fails
+      queryClient.clear();
+    }
   };
 
   return (

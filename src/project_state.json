@@ -4,37 +4,53 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Police interface does not reliably show ambulance location; ambulance may not appear or location is inaccurate, making it hard to find."
+    "Blank white screen appears when app loads in production"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-ensure-the-police-interface-reliably-shows-ambulances-on-the-map-and-in-the-list-even-when-they-are-outside-the-configured-radius-by-adding-a-police-authorized-backend-query-that-returns-all-current-ambulance-locations-and-wiring-the-police-ui-to-use-it-with-optional-radius-filtering-as-a-client-side-view-filter",
-      "title": "Ensure the police interface reliably shows ambulances on the map and in the list even when they are outside the configured radius, by adding a police-authorized backend query that returns all current ambulance locations and wiring the police UI to use it (with optional radius filtering as a client-side view filter).",
+      "id": "feature-add-comprehensive-error-logging-to-identify-the-root-cause-of-the-blank-white-screen-in-production-log-errors-from-react-query-initialization-internet-identity-provider-setup-actor-creation-and-any-uncaught-exceptions-during-app-bootstrap",
+      "title": "Add comprehensive error logging to identify the root cause of the blank white screen in production. Log errors from React Query initialization, Internet Identity provider setup, actor creation, and any uncaught exceptions during app bootstrap.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-police-side-visibility-of-stale-paused-ambulance-updates-do-not-hide-ambulances-purely-because-their-last-update-is-older-than-the-current-timeout-instead-keep-them-visible-and-clearly-label-them-as-offline-last-update-xs-ago-and-provide-a-ui-toggle-to-hide-show-offline-ambulances",
-      "title": "Improve police-side visibility of stale/paused ambulance updates: do not hide ambulances purely because their last update is older than the current timeout; instead, keep them visible and clearly label them as “Offline / Last update: Xs ago”, and provide a UI toggle to hide/show offline ambulances.",
+      "id": "feature-add-a-loading-fallback-ui-to-frontend-src-main-tsx-that-displays-while-the-app-initializes-preventing-a-blank-screen-during-bootstrap-show-a-centered-spinner-or-loading-message",
+      "title": "Add a loading fallback UI to frontend/src/main.tsx that displays while the app initializes, preventing a blank screen during bootstrap. Show a centered spinner or loading message.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-fix-incorrect-ambulance-to-contact-association-in-the-police-interface-by-matching-ambulance-contacts-by-ambulanceid-principal-rather-than-by-array-index-so-the-displayed-contact-name-phone-corresponds-to-the-correct-ambulance-marker-and-list-item",
-      "title": "Fix incorrect ambulance-to-contact association in the police interface by matching ambulance contacts by ambulanceId (principal) rather than by array index, so the displayed contact name/phone corresponds to the correct ambulance marker and list item.",
+      "id": "feature-wrap-the-root-app-component-in-frontend-src-main-tsx-with-errorboundary-to-catch-and-display-any-render-time-errors-that-might-cause-a-blank-screen",
+      "title": "Wrap the root App component in frontend/src/main.tsx with ErrorBoundary to catch and display any render-time errors that might cause a blank screen.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-defensive-null-checks-and-error-handling-in-frontend-src-app-tsx-for-cases-where-the-actor-identity-or-profile-data-fails-to-load-display-a-user-friendly-error-message-instead-of-crashing",
+      "title": "Add defensive null checks and error handling in frontend/src/App.tsx for cases where the actor, identity, or profile data fails to load. Display a user-friendly error message instead of crashing.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-that-the-leaflet-cdn-script-in-frontend-index-html-loads-successfully-by-adding-an-onload-handler-and-error-fallback-log-any-cdn-loading-failures",
+      "title": "Verify that the Leaflet CDN script in frontend/index.html loads successfully by adding an onload handler and error fallback. Log any CDN loading failures.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [],
-  "projectName": "Fix police interface to reliably display accurate ambulance locations",
+  "projectName": "Fix blank white screen on production load",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -1,63 +1,130 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Police Command Center: show all ambulances, offline visibility, and correct contact association",
+  "title": "Fix blank white screen on production load",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update Police Command Center to fetch and display all ambulance locations (not radius-limited) and apply optional radius filtering as a client-side view filter.",
+      "summary": "Add comprehensive error logging to identify the root cause of the blank white screen in production",
       "acceptanceCriteria": [
-        "When logged in as a police user, the Police Command Center displays all ambulances that have a stored location in the backend (not only those within POLICE_RADIUS_KM).",
-        "Backend rejects the new “all ambulance locations” query for non-police/non-admin callers with an authorization trap consistent with existing patterns.",
-        "The police map shows ambulance markers for the returned ambulances and does not show an empty state solely due to radius filtering."
+        "Console logs capture all initialization errors",
+        "Error details are visible in browser DevTools console",
+        "Logs distinguish between auth failures, network issues, and render errors"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/main.tsx",
           "operation": "modify",
-          "description": "Add a police-oriented React Query hook that fetches all current ambulance locations (using the backend capability that returns all ambulance locations) and polls at LOCATION_UPDATE_INTERVAL. Ensure authorization failures are surfaced/handled similarly to existing patterns. Verify the component's usage instructions before implementing."
+          "description": "Add error logging for React Query client initialization failures, including onError callbacks in the QueryClient configuration to capture and log all query errors during bootstrap"
         },
         {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
           "operation": "modify",
-          "description": "Wire the Police UI to use the new 'all ambulance locations' hook as the source of truth, and implement an optional client-side radius view filter (default can remain based on POLICE_RADIUS_KM) without preventing map/list from showing ambulances outside the radius when the filter is disabled. Update the list header/empty-state copy so it reflects the current filter mode. Verify the component's usage instructions before implementing."
+          "description": "Add comprehensive console.error logging for Internet Identity provider initialization failures, AuthClient creation errors, and identity loading failures with detailed error messages"
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Add error logging for actor creation failures, including canister connection errors, identity validation failures, and any exceptions during actor initialization with context about the failure point"
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add logging for uncaught exceptions during app bootstrap, profile loading errors, and role-based routing failures with timestamps and error context"
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Keep stale ambulances visible with an offline label and provide a toggle to hide/show offline ambulances across list and map.",
+      "summary": "Add a loading fallback UI that displays while the app initializes, preventing a blank screen during bootstrap",
       "acceptanceCriteria": [
-        "If an ambulance has not updated within the timeout window, it still appears in the list and on the map, and is visually marked as offline with a readable last-update age.",
-        "Police users can toggle “Show offline ambulances” on/off; turning it off hides those stale ambulances from both list and map.",
-        "The empty-state message (“No ambulances detected…”) only appears when there are truly no ambulances to show given the current toggle/filter settings."
+        "Users see a loading indicator immediately on page load",
+        "Loading state is visible until React Query and Internet Identity providers are ready",
+        "Loading UI uses the app's theme colors"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/PoliceInterface.tsx",
+          "path": "frontend/src/main.tsx",
           "operation": "modify",
-          "description": "Remove the hard filter that drops stale ambulance locations. Compute an 'isOffline' flag per ambulance based on last-update age; render offline styling and text like “Offline / Last update: Xs ago” in both the list item and marker label. Add a UI toggle state (default on) to show/hide offline ambulances and apply it consistently to both list and map marker generation. Ensure empty-state messaging only appears when no ambulances remain after applying current view toggles/filters. Verify the component's usage instructions before implementing."
+          "description": "Wrap the App component tree with React.Suspense using a loading fallback that displays a centered spinner with the app's theme colors during initialization of React Query and Internet Identity providers"
+        },
+        {
+          "path": "frontend/src/components/LoadingFallback.tsx",
+          "operation": "create",
+          "description": "Create a LoadingFallback component that displays a centered spinner using Tailwind theme colors with a loading message, ensuring it covers the full viewport and prevents blank screen display during app bootstrap"
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Correctly associate ambulance contact details by ambulanceId rather than array index so contacts match the right marker and list item.",
+      "summary": "Wrap the root App component with ErrorBoundary to catch and display any render-time errors",
       "acceptanceCriteria": [
-        "For a given ambulanceId, the same ambulanceId is used to retrieve and render that ambulance’s contact info in both the list and the map marker label.",
-        "Reordering of backend results (or differing order between location and contacts queries) does not cause contact information to appear under the wrong ambulance.",
-        "If no contact is available for an ambulanceId, the UI shows “Unknown” (or existing fallback) only for that specific ambulance."
+        "ErrorBoundary catches all React rendering errors",
+        "CrashFallback is displayed when errors occur",
+        "Error details are logged to console"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/main.tsx",
           "operation": "modify",
-          "description": "Add a police-side data hook that retrieves contact/profile details keyed by ambulanceId (principal), returning a lookup map (e.g., by stringified principal) so the UI can render the correct name/phone for each ambulance regardless of ordering. Prefer using the backend capability to fetch a specific user's profile by principal to ensure stable association. Verify the component's usage instructions before implementing."
+          "description": "Wrap the App component with the existing ErrorBoundary component, ensuring it catches all render-time errors and displays the CrashFallback UI with error details logged to console"
+        },
+        {
+          "path": "frontend/src/components/ErrorBoundary.tsx",
+          "operation": "modify",
+          "description": "Enhance ErrorBoundary to log caught errors to console.error with stack traces and component hierarchy information before displaying CrashFallback"
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add defensive null checks and error handling in App.tsx for cases where the actor, identity, or profile data fails to load",
+      "acceptanceCriteria": [
+        "App handles missing or failed actor creation gracefully",
+        "Clear error messages are shown when profile loading fails",
+        "Users can retry failed operations"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add null checks for actor availability before rendering role-based UI, handle profile loading failures with user-friendly error messages, and provide retry buttons for failed operations instead of crashing"
+        },
+        {
+          "path": "frontend/src/components/ErrorState.tsx",
+          "operation": "create",
+          "description": "Create an ErrorState component that displays user-friendly error messages with retry buttons for actor creation failures, profile loading errors, and network issues with proper error context"
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Verify that the Leaflet CDN script loads successfully by adding an onload handler and error fallback",
+      "acceptanceCriteria": [
+        "Leaflet CDN load success/failure is logged",
+        "App displays an error if Leaflet fails to load",
+        "Map components handle missing Leaflet gracefully"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Add onload and onerror event handlers to the Leaflet CDN script tag that log success/failure to console and set a window.leafletLoaded flag to track loading state"
+        },
+        {
+          "path": "frontend/src/components/RealtimeMap.tsx",
+          "operation": "modify",
+          "description": "Add defensive check for window.L availability before initializing the map, display an error message if Leaflet is not loaded, and handle missing Leaflet gracefully with a fallback UI showing a map loading error"
+        },
+        {
+          "path": "frontend/src/pages/AmbulanceInterface.tsx",
+          "operation": "modify",
+          "description": "Add check for Leaflet availability before rendering the RealtimeMap component and display an error message if Leaflet failed to load with instructions to refresh the page"
         },
         {
           "path": "frontend/src/pages/PoliceInterface.tsx",
           "operation": "modify",
-          "description": "Replace index-based contact matching with ambulanceId-based lookup for both list rendering and map marker labels. Ensure missing profile/contact info only affects the corresponding ambulance (showing 'Unknown' fallback) and does not shift other ambulances' contact details. Verify the component's usage instructions before implementing."
+          "description": "Add check for Leaflet availability before rendering the RealtimeMap component and display an error message if Leaflet failed to load with instructions to refresh the page"
         }
       ]
     }

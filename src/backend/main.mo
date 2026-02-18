@@ -520,3 +520,4 @@ actor {
     allAlerts.map<(AmbulanceId, SOSAlert), SOSAlert>(func((_, alert)) { alert });
   };
 };
+

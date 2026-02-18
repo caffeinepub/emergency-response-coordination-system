@@ -49,10 +49,17 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
 
   // Initialize map once
   useEffect(() => {
-    if (!mapContainerRef.current || mapInstanceRef.current || !window.L) {
+    if (!mapContainerRef.current || mapInstanceRef.current) {
       return;
     }
 
+    if (!window.L) {
+      console.error('[RealtimeMap] Cannot initialize map: Leaflet not loaded');
+      setMapError('Map library not available');
+      return;
+    }
+
+    console.log('[RealtimeMap] Initializing map...');
     try {
       // Create map instance
       const map = window.L.map(mapContainerRef.current, {
@@ -67,7 +74,8 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
         maxZoom: 19,
       });
 
-      tileLayer.on('tileerror', () => {
+      tileLayer.on('tileerror', (error: any) => {
+        console.error('[RealtimeMap] Tile loading error:', error);
         setMapError('Unable to load map tiles. Check your internet connection.');
       });
 
@@ -79,13 +87,15 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
       mapInstanceRef.current = map;
       currentCenterRef.current = { lat: center.lat, lng: center.lng };
       setIsMapReady(true);
+      console.log('[RealtimeMap] Map initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize map:', error);
+      console.error('[RealtimeMap] Failed to initialize map:', error);
       setMapError('Failed to initialize map. Please refresh the page.');
     }
 
     // Cleanup
     return () => {
+      console.log('[RealtimeMap] Cleaning up map');
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -204,12 +214,14 @@ export default function RealtimeMap({ center, markers, zoom = 15, className = ''
     previousMarkerIdsRef.current = currentMarkerIds;
   }, [markers, isMapReady]);
 
+  // Check if Leaflet is loaded - render error if not
   if (!window.L) {
+    console.error('[RealtimeMap] Leaflet (window.L) is not available');
     return (
       <Alert className="border-destructive bg-destructive/10">
         <AlertCircle className="h-4 w-4 text-destructive" />
         <AlertDescription>
-          Map library failed to load. Please refresh the page.
+          Map library failed to load. Please refresh the page. If the problem persists, check your internet connection.
         </AlertDescription>
       </Alert>
     );

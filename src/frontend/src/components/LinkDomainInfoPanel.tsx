@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Info, ExternalLink } from 'lucide-react';
+import { Info, ExternalLink, AlertCircle } from 'lucide-react';
 import { getShareUrl } from '../utils/getShareUrl';
 
 export default function LinkDomainInfoPanel() {
@@ -65,6 +65,24 @@ export default function LinkDomainInfoPanel() {
                 <ExternalLink className="h-4 w-4" />
                 <span className="text-xs">Configure custom domains in your deployment platform settings</span>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                Troubleshooting: Production Publish Failures
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>
+                If a production publish fails with a generic "Deployment error" message, this is usually a temporary issue
+                caused by network congestion or the previous build still finalizing on the Internet Computer.
+              </p>
+              <p className="text-foreground font-medium">
+                <strong>Solution:</strong> Wait 30-60 seconds and retry the production publish. It typically succeeds on the second attempt.
+              </p>
             </CardContent>
           </Card>
         </div>

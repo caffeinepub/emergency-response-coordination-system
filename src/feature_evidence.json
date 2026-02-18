@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-ensure-the-police-interface-reliably-shows-ambulances-on-the-map-and-in-the-list-even-when-they-are-outside-the-configured-radius-by-adding-a-police-authorized-backend-query-that-returns-all-current-ambulance-locations-and-wiring-the-police-ui-to-use-it-with-optional-radius-filtering-as-a-client-side-view-filter",
-      "featureTitle": "Ensure the police interface reliably shows ambulances on the map and in the list even when they are outside the configured radius, by adding a police-authorized backend query that returns all current ambulance locations and wiring the police UI to use it (with optional radius filtering as a client-side view filter).",
+      "featureId": "feature-add-comprehensive-error-logging-to-identify-the-root-cause-of-the-blank-white-screen-in-production-log-errors-from-react-query-initialization-internet-identity-provider-setup-actor-creation-and-any-uncaught-exceptions-during-app-bootstrap",
+      "featureTitle": "Add comprehensive error logging to identify the root cause of the blank white screen in production. Log errors from React Query initialization, Internet Identity provider setup, actor creation, and any uncaught exceptions during app bootstrap.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/PoliceInterface.tsx"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +21,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-police-side-visibility-of-stale-paused-ambulance-updates-do-not-hide-ambulances-purely-because-their-last-update-is-older-than-the-current-timeout-instead-keep-them-visible-and-clearly-label-them-as-offline-last-update-xs-ago-and-provide-a-ui-toggle-to-hide-show-offline-ambulances",
-      "featureTitle": "Improve police-side visibility of stale/paused ambulance updates: do not hide ambulances purely because their last update is older than the current timeout; instead, keep them visible and clearly label them as “Offline / Last update: Xs ago”, and provide a UI toggle to hide/show offline ambulances.",
+      "featureId": "feature-add-a-loading-fallback-ui-to-frontend-src-main-tsx-that-displays-while-the-app-initializes-preventing-a-blank-screen-during-bootstrap-show-a-centered-spinner-or-loading-message",
+      "featureTitle": "Add a loading fallback UI to frontend/src/main.tsx that displays while the app initializes, preventing a blank screen during bootstrap. Show a centered spinner or loading message.",
       "files": [
-        "frontend/src/pages/PoliceInterface.tsx"
+        "frontend/src/components/LoadingFallback.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -41,11 +40,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-incorrect-ambulance-to-contact-association-in-the-police-interface-by-matching-ambulance-contacts-by-ambulanceid-principal-rather-than-by-array-index-so-the-displayed-contact-name-phone-corresponds-to-the-correct-ambulance-marker-and-list-item",
-      "featureTitle": "Fix incorrect ambulance-to-contact association in the police interface by matching ambulance contacts by ambulanceId (principal) rather than by array index, so the displayed contact name/phone corresponds to the correct ambulance marker and list item.",
+      "featureId": "feature-wrap-the-root-app-component-in-frontend-src-main-tsx-with-errorboundary-to-catch-and-display-any-render-time-errors-that-might-cause-a-blank-screen",
+      "featureTitle": "Wrap the root App component in frontend/src/main.tsx with ErrorBoundary to catch and display any render-time errors that might cause a blank screen.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/PoliceInterface.tsx"
+        "frontend/src/components/ErrorBoundary.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -57,6 +55,48 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-defensive-null-checks-and-error-handling-in-frontend-src-app-tsx-for-cases-where-the-actor-identity-or-profile-data-fails-to-load-display-a-user-friendly-error-message-instead-of-crashing",
+      "featureTitle": "Add defensive null checks and error handling in frontend/src/App.tsx for cases where the actor, identity, or profile data fails to load. Display a user-friendly error message instead of crashing.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/ErrorState.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-verify-that-the-leaflet-cdn-script-in-frontend-index-html-loads-successfully-by-adding-an-onload-handler-and-error-fallback-log-any-cdn-loading-failures",
+      "featureTitle": "Verify that the Leaflet CDN script in frontend/index.html loads successfully by adding an onload handler and error fallback. Log any CDN loading failures.",
+      "files": [
+        "frontend/index.html",
+        "frontend/src/components/RealtimeMap.tsx",
+        "frontend/src/pages/AmbulanceInterface.tsx",
+        "frontend/src/pages/PoliceInterface.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

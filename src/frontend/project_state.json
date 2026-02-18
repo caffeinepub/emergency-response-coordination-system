@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "known_issues": [
+    {
+      "id": "ISSUE-1",
+      "title": "Transient production deployment errors",
+      "description": "Production publishing can occasionally fail with a generic 'Deployment error' message. This is typically a transient issue caused by network congestion or the previous build not fully finalizing on the Internet Computer network.",
+      "mitigation": "Wait briefly (30-60 seconds) and retry the production publish. The deployment usually succeeds on the second attempt once the network/builder has finalized the previous state.",
+      "severity": "low",
+      "workaround": "Retry production publish after a short wait"
+    }
+  ]
+}
