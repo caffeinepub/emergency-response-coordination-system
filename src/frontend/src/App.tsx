@@ -52,6 +52,7 @@ export default function App() {
       error: loginError,
       message: loginError.message,
       stack: loginError.stack,
+      timestamp: new Date().toISOString(),
     });
     return (
       <ErrorState
@@ -107,8 +108,10 @@ export default function App() {
     console.log('[App] ⏳ Loading user profile...', {
       hasActor: !!actor,
       hasIdentity: !!identity,
+      identityPrincipal: identity.getPrincipal().toString(),
       profileLoading,
       isFetched,
+      timestamp: new Date().toISOString(),
     });
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -124,6 +127,13 @@ export default function App() {
   if (isError && profileError) {
     const errorMessage = profileError instanceof Error ? profileError.message : String(profileError);
     const errorType = (profileError as any)?.errorType;
+    
+    console.log('[App] Profile error detected:', {
+      errorMessage,
+      errorType,
+      isError,
+      timestamp: new Date().toISOString(),
+    });
     
     // Check if this is an authorization error (which means new user)
     const isAuthError = 
@@ -147,7 +157,7 @@ export default function App() {
     }
 
     // For genuine errors (network, backend down, etc.), show error state
-    console.error('[App] ❌ Profile loading error detected:', {
+    console.error('[App] ❌ Profile loading error detected - FULL ERROR DETAILS:', {
       error: profileError,
       errorType: profileError?.constructor?.name,
       errorMessage,
@@ -189,7 +199,12 @@ export default function App() {
   // Show profile setup if authenticated but no profile (new user)
   const showProfileSetup = isAuthenticated && isFetched && userProfile === null;
   if (showProfileSetup) {
-    console.log('[App] 👤 New user detected, showing profile setup');
+    console.log('[App] 👤 New user detected (profile is null), showing profile setup', {
+      isAuthenticated,
+      isFetched,
+      userProfile,
+      timestamp: new Date().toISOString(),
+    });
     return (
       <div className="flex min-h-screen flex-col">
         <Header />

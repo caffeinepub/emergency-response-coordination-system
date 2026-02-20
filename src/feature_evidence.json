@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-investigate-and-resolve-the-profile-loading-error-that-displays-failed-to-load-your-user-profile-this-might-be-a-temporary-network-issue-or-a-backend-problem-the-error-appears-after-authentication-and-prevents-users-from-accessing-the-application",
-      "featureTitle": "Investigate and resolve the 'Profile Loading Error' that displays 'Failed to load your user profile. This might be a temporary network issue or a backend problem.' The error appears after authentication and prevents users from accessing the application.",
+      "featureId": "feature-investigate-and-fix-the-unable-to-save-profile-please-try-logging-in-again-error-that-occurs-when-a-new-user-lavanya-phone-1237894561-tries-to-complete-profile-setup-with-the-ambulance-crew-role-selected-on-a-new-device",
+      "featureTitle": "Investigate and fix the 'Unable to save profile. Please try logging in again.' error that occurs when a new user (Lavanya, phone: 1237894561) tries to complete profile setup with the Ambulance Crew role selected on a new device",
       "files": [
         "frontend/src/App.tsx",
+        "frontend/src/components/ProfileSetup.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -17,16 +18,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-3"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-improved-error-handling-and-logging-for-profile-loading-operations-in-app-tsx-to-capture-more-diagnostic-information-about-profile-fetch-failures-including-network-status-backend-actor-availability-and-response-details",
-      "featureTitle": "Add improved error handling and logging for profile loading operations in App.tsx to capture more diagnostic information about profile fetch failures, including network status, backend actor availability, and response details.",
+      "featureId": "feature-add-comprehensive-error-logging-to-the-profile-creation-flow-in-both-profilesetup-tsx-and-the-backend-createuserprofile-function-to-capture-the-exact-failure-reason-authorization-issues-validation-errors-or-backend-state-conflicts",
+      "featureTitle": "Add comprehensive error logging to the profile creation flow in both ProfileSetup.tsx and the backend createUserProfile function to capture the exact failure reason (authorization issues, validation errors, or backend state conflicts)",
       "files": [
         "frontend/src/App.tsx",
-        "frontend/src/components/ErrorState.tsx",
+        "frontend/src/components/ProfileSetup.tsx",
         "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
@@ -38,7 +39,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-4"
       ],
       "confidence": "high"
     }

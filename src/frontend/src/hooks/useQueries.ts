@@ -13,49 +13,56 @@ export function useGetCallerUserProfile() {
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      console.log('[useGetCallerUserProfile] Query function called', {
+      console.log('[useGetCallerUserProfile] ========== Query function called ==========');
+      console.log('[useGetCallerUserProfile] Query context:', {
         hasActor: !!actor,
         actorFetching,
         hasIdentity: !!identity,
         isAnonymous: identity ? Principal.anonymous().toString() === identity.getPrincipal().toString() : true,
+        identityPrincipal: identity?.getPrincipal().toString(),
         timestamp: new Date().toISOString(),
       });
 
       if (!actor) {
-        console.error('[useGetCallerUserProfile] Actor not available');
+        console.error('[useGetCallerUserProfile] ❌ Actor not available');
         throw new Error('Actor not available');
       }
 
       if (!identity) {
-        console.error('[useGetCallerUserProfile] Identity not available');
+        console.error('[useGetCallerUserProfile] ❌ Identity not available');
         throw new Error('Identity not available');
       }
 
       // Check if user is anonymous
       const isAnonymous = Principal.anonymous().toString() === identity.getPrincipal().toString();
       if (isAnonymous) {
-        console.warn('[useGetCallerUserProfile] Anonymous principal detected, returning null');
+        console.warn('[useGetCallerUserProfile] ⚠️ Anonymous principal detected, returning null');
         return null;
       }
 
       try {
         console.log('[useGetCallerUserProfile] Calling actor.getCallerUserProfile()...');
         const profile = await actor.getCallerUserProfile();
-        console.log('[useGetCallerUserProfile] Profile fetched successfully:', {
+        console.log('[useGetCallerUserProfile] ✅ Profile fetched successfully:', {
           hasProfile: !!profile,
           profileName: profile?.name,
           profileRole: profile?.role,
           profilePhone: profile?.phoneNumber,
+          timestamp: new Date().toISOString(),
         });
         return profile;
       } catch (error: any) {
         const errorMessage = error?.message || String(error);
         
-        console.error('[useGetCallerUserProfile] Error fetching profile:', {
+        console.error('[useGetCallerUserProfile] ❌ Error fetching profile - FULL ERROR DETAILS:', {
           errorType: error?.constructor?.name,
+          errorName: error?.name,
           errorMessage,
           errorString: String(error),
           errorStack: error?.stack,
+          errorKeys: Object.keys(error || {}),
+          errorCode: (error as any)?.code,
+          errorStatus: (error as any)?.status,
           hasActor: !!actor,
           hasIdentity: !!identity,
           principalId: identity?.getPrincipal().toString(),
@@ -69,7 +76,7 @@ export function useGetCallerUserProfile() {
           errorMessage.includes('Anonymous') ||
           errorMessage.includes('permission')
         ) {
-          console.warn('[useGetCallerUserProfile] Authorization error - user may not be set up yet, returning null');
+          console.warn('[useGetCallerUserProfile] ⚠️ Authorization error - user may not be set up yet, returning null');
           // Return null instead of throwing - this indicates a new user who needs profile setup
           return null;
         }
@@ -114,6 +121,7 @@ export function useGetCallerUserProfile() {
     error: query.error?.message,
     hasData: !!query.data,
     actorFetching,
+    timestamp: new Date().toISOString(),
   });
 
   return {
@@ -125,51 +133,75 @@ export function useGetCallerUserProfile() {
 
 export function useSaveCallerUserProfile() {
   const { actor } = useActor();
+  const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
+      console.log('[useSaveCallerUserProfile] ========== Mutation started ==========');
+      console.log('[useSaveCallerUserProfile] Mutation context:', {
+        hasActor: !!actor,
+        hasIdentity: !!identity,
+        identityPrincipal: identity?.getPrincipal().toString(),
+        timestamp: new Date().toISOString(),
+      });
+      
+      if (!actor) {
+        console.error('[useSaveCallerUserProfile] ❌ Actor not available');
+        throw new Error('Actor not available');
+      }
+      
+      console.log('[useSaveCallerUserProfile] Profile to save:', {
+        name: profile.name,
+        role: profile.role,
+        phoneNumber: profile.phoneNumber,
+        phoneLength: profile.phoneNumber.length,
+        timestamp: new Date().toISOString(),
+      });
+      
       try {
-        console.log('[useSaveCallerUserProfile] Saving profile:', {
-          name: profile.name,
-          role: profile.role,
-          phoneLength: profile.phoneNumber.length,
-        });
+        console.log('[useSaveCallerUserProfile] Calling actor.saveCallerUserProfile...');
         await actor.saveCallerUserProfile(profile);
-        console.log('[useSaveCallerUserProfile] Profile saved successfully');
+        console.log('[useSaveCallerUserProfile] ✅ Profile saved successfully');
       } catch (error: any) {
-        console.error('[useSaveCallerUserProfile] Error saving profile:', {
+        console.error('[useSaveCallerUserProfile] ❌ Error saving profile - FULL ERROR DETAILS:', {
           errorType: error?.constructor?.name,
+          errorName: error?.name,
           errorMessage: error?.message,
           errorString: String(error),
+          errorStack: error?.stack,
+          errorKeys: Object.keys(error || {}),
+          errorCode: (error as any)?.code,
+          errorStatus: (error as any)?.status,
+          errorResponse: (error as any)?.response,
+          errorData: (error as any)?.data,
+          // Context
+          hasActor: !!actor,
+          hasIdentity: !!identity,
+          identityPrincipal: identity?.getPrincipal().toString(),
+          attemptedProfile: profile,
+          timestamp: new Date().toISOString(),
         });
         
-        // Extract meaningful error message from backend trap
-        const errorMessage = error?.message || String(error);
-        
-        // Check for phone number validation errors
-        if (errorMessage.includes('Phone number must be exactly 10 digits')) {
-          throw new Error('Phone number must be exactly 10 digits');
-        }
-        if (errorMessage.includes('Phone number must contain only digits')) {
-          throw new Error('Phone number must contain only digits (0-9)');
-        }
-        
-        // Check for authorization errors
-        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Anonymous')) {
-          throw new Error('Unable to save profile. Please try logging in again.');
-        }
-        
-        // Generic error
-        throw new Error('Failed to save profile. Please try again.');
+        // Preserve the original error message from backend
+        // The backend sends specific error messages via Runtime.trap()
+        throw error;
       }
     },
     onSuccess: async () => {
-      console.log('[useSaveCallerUserProfile] Invalidating and refetching profile queries');
+      console.log('[useSaveCallerUserProfile] ✅ Mutation succeeded, invalidating queries');
       // Invalidate and immediately refetch to ensure UI transitions properly
       await queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
       await queryClient.refetchQueries({ queryKey: ['currentUserProfile'] });
+      console.log('[useSaveCallerUserProfile] Queries invalidated and refetched');
+    },
+    onError: (error: any) => {
+      console.error('[useSaveCallerUserProfile] ❌ Mutation error callback:', {
+        errorType: error?.constructor?.name,
+        errorMessage: error?.message,
+        errorString: String(error),
+        timestamp: new Date().toISOString(),
+      });
     },
   });
 }
@@ -258,20 +290,19 @@ export function useGetAllAmbulanceLocations() {
         return await actor.getAllAmbulanceLocations();
       } catch (error: any) {
         const errorMessage = error?.message || String(error);
-        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only police')) {
-          console.error('Authorization error fetching all ambulance locations:', errorMessage);
+        if (errorMessage.includes('Unauthorized')) {
+          console.error('Authorization error fetching ambulance locations:', errorMessage);
           return [];
         }
         throw error;
       }
     },
     enabled: !!actor && !actorFetching,
-    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds for faster updates
+    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds for police interface
     staleTime: 4000, // Consider data stale after 4 seconds
   });
 }
 
-// Combined ambulance radar data (locations + contacts)
 export function useGetAmbulanceContactsInRadius(center: Coordinates | null, radius: number) {
   const { actor, isFetching: actorFetching } = useActor();
 
@@ -279,21 +310,11 @@ export function useGetAmbulanceContactsInRadius(center: Coordinates | null, radi
     queryKey: ['ambulanceContacts', center, radius],
     queryFn: async () => {
       if (!actor || !center) return [];
-      try {
-        return actor.getAmbulanceContactsInRadius(center, radius);
-      } catch (error: any) {
-        // Handle authorization errors gracefully
-        const errorMessage = error?.message || String(error);
-        if (errorMessage.includes('Unauthorized') || errorMessage.includes('Only police')) {
-          console.error('Authorization error fetching ambulance contacts:', errorMessage);
-          return [];
-        }
-        throw error;
-      }
+      return actor.getAmbulanceContactsInRadius(center, radius);
     },
     enabled: !!actor && !actorFetching && !!center,
-    refetchInterval: LOCATION_UPDATE_INTERVAL, // Poll every 12 seconds for live updates
-    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds
+    staleTime: 4000,
   });
 }
 
@@ -337,11 +358,20 @@ export function useGetActiveSOSAlerts() {
     queryKey: ['sosAlerts'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getActiveSOSAlerts();
+      try {
+        return await actor.getActiveSOSAlerts();
+      } catch (error: any) {
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('Unauthorized')) {
+          console.error('Authorization error fetching SOS alerts:', errorMessage);
+          return [];
+        }
+        throw error;
+      }
     },
     enabled: !!actor && !actorFetching,
-    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds for live updates
-    staleTime: 4000, // Consider data stale after 4 seconds
+    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds for real-time alerts
+    staleTime: 4000,
   });
 }
 
@@ -354,21 +384,25 @@ export function useGetMySOSAlert() {
     queryKey: ['mySOSAlert'],
     queryFn: async () => {
       if (!actor || !identity) return null;
+      
       try {
-        const ambulanceId = identity.getPrincipal();
-        return await actor.getSOSAlert(ambulanceId);
+        // Use the caller's principal as the alert ID (ambulance ID)
+        const myPrincipal = identity.getPrincipal();
+        const alert = await actor.getSOSAlert(myPrincipal);
+        return alert;
       } catch (error: any) {
         const errorMessage = error?.message || String(error);
         if (errorMessage.includes('Unauthorized')) {
-          console.error('Authorization error fetching SOS alert:', errorMessage);
+          console.error('Authorization error fetching my SOS alert:', errorMessage);
           return null;
         }
-        throw error;
+        // If no alert found, return null (not an error)
+        return null;
       }
     },
     enabled: !!actor && !actorFetching && !!identity,
-    refetchInterval: POLICE_REFRESH_INTERVAL, // Poll every 5 seconds for live updates
-    staleTime: 4000, // Consider data stale after 4 seconds
+    refetchInterval: 5000, // Poll every 5 seconds to check SOS status
+    staleTime: 4000,
   });
 }
 
@@ -380,12 +414,9 @@ export function useAmbulanceLogout() {
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      console.log('[useAmbulanceLogout] Calling ambulanceLogout...');
-      await actor.ambulanceLogout();
-      console.log('[useAmbulanceLogout] Logout successful');
+      return actor.ambulanceLogout();
     },
     onSuccess: () => {
-      console.log('[useAmbulanceLogout] Invalidating location and SOS queries');
       queryClient.invalidateQueries({ queryKey: ['ambulanceLocations'] });
       queryClient.invalidateQueries({ queryKey: ['allAmbulanceLocations'] });
       queryClient.invalidateQueries({ queryKey: ['sosAlerts'] });

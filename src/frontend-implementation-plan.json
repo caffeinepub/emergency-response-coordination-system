@@ -1,52 +1,63 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix profile loading error",
+  "title": "Fix profile creation error on new device login",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Investigate and resolve the 'Profile Loading Error' that prevents users from accessing the application after authentication",
+      "id": "REQ-3",
+      "summary": "Fix 'Unable to save profile' error during profile creation for new users on new devices",
       "acceptanceCriteria": [
-        "Users can successfully load their profile after authentication",
-        "Profile loading errors are handled gracefully with appropriate retry logic",
-        "Root cause of the profile loading failure is identified and fixed"
+        "New users can successfully create their profile on first login from any device",
+        "The error message shown in the screenshot no longer appears during valid profile creation attempts",
+        "Profile data (name: Lavanya, phone: 1237894561, role: Ambulance Crew) is correctly saved to the backend",
+        "User is properly redirected to the Ambulance Interface after successful profile creation"
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/ProfileSetup.tsx",
+          "operation": "modify",
+          "description": "Enhance error handling in the profile creation flow to properly handle authorization state during initial profile setup. Add comprehensive logging that captures the full error response including error type, message, and backend response details. Ensure the component waits for actor initialization before attempting profile save operations. Improve error categorization to distinguish between validation errors, authorization failures (including the specific case where a user hasn't been assigned a role yet), and network errors. Add console logging for debugging authorization state, actor availability, and the complete error response from saveCallerUserProfile."
+        },
+        {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Fix the profile loading flow by ensuring proper sequencing between actor availability and profile fetch. Add defensive checks for actor state before calling getCallerUserProfile, implement exponential backoff retry logic for transient failures, and ensure the authorization component's profile fetch mechanism is correctly integrated with the React Query cache."
+          "description": "Review and enhance the profile loading logic to ensure proper sequencing of actor initialization, authentication state, and profile fetching. Add detailed console logging for the authentication flow including identity availability, actor initialization status, and profile fetch results. Ensure that the profile setup modal is only shown after the actor is fully initialized and the user is authenticated. Add error boundary logging to capture any unhandled errors during the profile setup flow. Verify that authorization errors are properly distinguished from profile-not-found scenarios."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Review and enhance the useGetCallerUserProfile hook to properly handle the authorization component's profile loading patterns. Ensure the hook correctly waits for actor initialization before enabling the query, implements proper error handling for authorization traps, and returns loading states that prevent premature error displays. Verify the component's usage instructions before implementing."
+          "description": "Enhance the useSaveCallerUserProfile mutation hook to include comprehensive error logging. Capture and log the full error object including error type, message, and any backend response data. Add console logging before the mutation attempt (logging the profile data being saved) and after failure (logging the complete error response). Ensure that authorization errors are properly surfaced to the calling component with sufficient detail for debugging. Add logging for the actor state and authentication status at the time of the mutation attempt."
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Add detailed logging to track actor initialization lifecycle including when the actor is created, when it becomes available, and any errors during creation. Log the identity state (authenticated vs anonymous) when creating the actor. Add logging to track query invalidation when the actor changes. Ensure that dependent queries (like profile fetching) are properly gated on actor availability. Add console warnings if profile-related queries are attempted before the actor is fully initialized."
         }
       ]
     },
     {
-      "id": "REQ-2",
-      "summary": "Add improved error handling and logging for profile loading operations to capture diagnostic information about profile fetch failures",
+      "id": "REQ-4",
+      "summary": "Add comprehensive error logging to profile creation flow for debugging authorization and validation failures",
       "acceptanceCriteria": [
-        "Console logs include detailed error information for profile loading failures",
-        "Error messages distinguish between network issues, authentication problems, and backend errors",
-        "Technical details section provides actionable debugging information"
+        "Backend logs include caller principal, input validation results, and any authorization check failures during createUserProfile calls",
+        "Frontend logs include the full error response from the backend including error type and message",
+        "Console output clearly identifies whether the error is due to authorization, validation, or backend logic"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/ProfileSetup.tsx",
           "operation": "modify",
-          "description": "Enhance the existing console logging in the profile loading section to include additional diagnostic context: actor initialization status, authentication state, network connectivity indicators, error type classification (network vs backend vs authorization), timestamp of failure, and retry attempt counts. Structure logs to clearly distinguish between transient and permanent failures."
-        },
-        {
-          "path": "frontend/src/components/ErrorState.tsx",
-          "operation": "modify",
-          "description": "Enhance the ErrorState component to display more granular error classifications for profile loading failures. Add specific messaging for authorization errors (trapped calls), network timeout issues, and backend unavailability. Include timestamp and session information in technical details to aid debugging."
+          "description": "Add detailed console logging throughout the profile creation flow. Log the user input (name, phone, role) before validation. Log validation results (success/failure for each field). Log the complete profile object being submitted to the backend. In the error handler, log the full error object with structured information including error.name, error.message, any backend-specific error details, and the current authentication state. Add logging to distinguish between validation errors (caught before backend call), authorization errors (from backend), and network/technical errors. Use console.error for errors and console.log for informational flow tracking."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add comprehensive error logging in the useGetCallerUserProfile query function. Log the full error object, actor availability status, authentication principal, query retry count, and network request details. Ensure error logs are structured to help identify whether failures originate from authorization checks, network issues, or backend method execution."
+          "description": "Add comprehensive logging to the useSaveCallerUserProfile mutation. Log the mutation attempt start with the profile data. On mutation success, log confirmation with the saved profile data. On mutation failure, log the complete error object including error type, message, backend response status (if available), and any additional error metadata. Add logging to track the actor state and identity principal at the time of mutation execution. Ensure all logging uses structured formats that clearly identify the operation context (e.g., '[ProfileSetup] Saving profile:', '[ProfileSetup] Save failed:')."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add logging to track the profile loading flow including when getCallerUserProfile is called, whether it returns a profile or null, and any errors encountered. Log the authentication state transitions (anonymous -> authenticated, profile loaded -> profile setup needed). Add error logging that captures the error type and distinguishes between authorization failures and legitimate 'no profile found' scenarios. Ensure that authorization errors during profile fetch are logged with full error details including the caller principal and error message."
         }
       ]
     }

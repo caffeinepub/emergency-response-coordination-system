@@ -1,66 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Fix profile loading error",
-  "priority": "normal",
+  "title": "Fix profile creation error on new device login",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Investigate and resolve the 'Profile Loading Error' that displays 'Failed to load your user profile. This might be a temporary network issue or a backend problem.' The error appears after authentication and prevents users from accessing the application.",
+      "id": "REQ-3",
+      "text": "Investigate and fix the 'Unable to save profile. Please try logging in again.' error that occurs when a new user (Lavanya, phone: 1237894561) tries to complete profile setup with the Ambulance Crew role selected on a new device",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-error-report"
+          "msg-latest"
         ],
         "quotes": [
-          "Profile Loading Error",
-          "Failed to load your user profile. This might be a temporary network issue or a backend problem."
+          "Unable to save profile. Please try logging in again."
         ]
       },
       "acceptanceCriteria": [
-        "Users can successfully load their profile after authentication",
-        "Profile loading errors are handled gracefully with appropriate retry logic",
-        "Root cause of the profile loading failure is identified and fixed"
+        "New users can successfully create their profile on first login from any device",
+        "The error message shown in the screenshot no longer appears during valid profile creation attempts",
+        "Profile data (name: Lavanya, phone: 1237894561, role: Ambulance Crew) is correctly saved to the backend",
+        "User is properly redirected to the Ambulance Interface after successful profile creation"
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Add improved error handling and logging for profile loading operations in App.tsx to capture more diagnostic information about profile fetch failures, including network status, backend actor availability, and response details.",
-      "target": "frontend",
+      "id": "REQ-4",
+      "text": "Add comprehensive error logging to the profile creation flow in both ProfileSetup.tsx and the backend createUserProfile function to capture the exact failure reason (authorization issues, validation errors, or backend state conflicts)",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-error-report"
+          "msg-latest"
         ]
       },
       "acceptanceCriteria": [
-        "Console logs include detailed error information for profile loading failures",
-        "Error messages distinguish between network issues, authentication problems, and backend errors",
-        "Technical details section provides actionable debugging information"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Verify that the backend actor's getUserProfile method is functioning correctly and returning proper responses for authenticated users, including edge cases where profiles may not exist or have incomplete data.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-user-error-report"
-        ]
-      },
-      "acceptanceCriteria": [
-        "getUserProfile returns valid profile data for existing users",
-        "Method handles missing profiles appropriately without throwing errors",
-        "Backend logs provide clear diagnostic information for profile retrieval operations"
+        "Backend logs include caller principal, input validation results, and any authorization check failures during createUserProfile calls",
+        "Frontend logs include the full error response from the backend including error type and message",
+        "Console output clearly identifies whether the error is due to authorization, validation, or backend logic"
       ]
     }
   ],
   "constraints": [
-    "Do not modify authentication flow or Internet Identity integration",
-    "Preserve existing profile data structure and schema"
+    "Do not change the existing authorization model or MixinAuthorization implementation",
+    "Preserve the current phone number validation logic (10 digits)",
+    "Maintain the existing error handling categories in ProfileSetup (validation, authorization, network)"
   ],
   "nonGoals": [
-    "Redesigning the profile loading UI",
-    "Adding new profile fields or features",
-    "Changing the overall application architecture"
+    "Redesigning the profile setup UI",
+    "Adding new profile fields beyond name, phone, and role",
+    "Changing the authentication mechanism from Internet Identity"
   ],
   "imageRequirements": {
     "required": [],
